@@ -67,9 +67,14 @@ pip install -e .
 
 ## 🖥️ Usage
 
-### Launch Interactive Visual Workspace
+### Launch Interactive Visual Workspace (Browser or Inside IDE)
 ```bash
+# Mở trình duyệt ngoài
 docx-agent workspace report.docx
+
+# Hoặc mở trực tiếp bên trong VS Code / Antigravity (Simple Browser hoặc Split Editor)
+docx-agent workspace report.docx --no-browser
+# Trong VS Code / Antigravity: Ctrl + Shift + P -> Simple Browser: Show -> http://localhost:8765
 ```
 
 ### Inspect & Read Documents
@@ -109,9 +114,34 @@ docx-agent verify report.docx --expected-font "Times New Roman" --json
 
 ---
 
+## ⚡ 1-Click Coding Agent Integration Prompt (Copy & Paste)
+
+Nếu bạn lười cấu hình thủ công, chỉ cần **copy toàn bộ đoạn prompt bên dưới** và dán thẳng vào khung chat của bất kỳ AI Coding Agent nào (**Antigravity, Cursor, Claude Code, Cline, Roo Code, Codex**). Agent sẽ tự động clone, cài đặt, đăng ký MCP server / skill và kích hoạt toàn bộ công cụ:
+
+```markdown
+Hãy tích hợp và kích hoạt nền tảng 'docx-agent' (https://github.com/TranNhatThach/Docx-Agent.git) vào môi trường làm việc của bạn:
+1. Kiểm tra và cài đặt package bằng lệnh: `pip install -e .` (hoặc `pip install git+https://github.com/TranNhatThach/Docx-Agent.git`).
+2. Đăng ký MCP Server `docx-agent-mcp` (stdio) hoặc cấu hình skill `docx-editor` để bạn có toàn bộ các công cụ thao tác DOCX chuẩn xác, không phá vỡ định dạng, trích dẫn học thuật và tạo sơ đồ.
+3. Chạy thử lệnh `docx-agent --help` để kiểm tra kết nối và xác nhận sẵn sàng xử lý các file tài liệu Word (.docx).
+```
+
+---
+
+## 🖥️ VS Code & Antigravity IDE Integration (Direct In-IDE Tab)
+
+Docx-Agent V2 đi kèm extension bundle [extensions/vscode](extensions/vscode) hỗ trợ mở tài liệu Word trực quan ngay trong IDE:
+
+1. **Chuột phải vào file `.docx` trong File Explorer** -> Chọn **`Docx-Agent: Open in Visual Workspace`**.
+2. **Khung làm việc trực tiếp:**
+   * Cây mục lục Heading tự động phân cấp bên trái.
+   * Trang soạn thảo A4 chuẩn in ấn ở giữa (gõ text, sửa bảng, bôi đen).
+   * Bảng chat AI Agent bên phải để yêu cầu viết lại, trích dẫn học thuật, tạo sơ đồ hoặc phê duyệt/từ chối Giao dịch (Transaction) chỉ bằng 1 click.
+
+---
+
 ## 🤖 MCP Server Setup (Antigravity / Claude Code / Cursor / Cline)
 
-Add to your agent configuration:
+Nếu muốn cấu hình thủ công MCP Server vào file `mcp_config.json` hoặc cấu hình Agent:
 
 ```json
 {
