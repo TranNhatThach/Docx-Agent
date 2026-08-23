@@ -208,14 +208,76 @@ MCP_TOOLS = [
     },
     {
         "name": "docx_diff",
-        "description": "Generates semantic structural and textual diff between two DOCX revisions.",
+        "description": "Compares two DOCX files and produces structured semantic diff.",
         "inputSchema": {
             "type": "object",
             "properties": {
-                "before": {"type": "string", "description": "Path to before .docx file"},
-                "after": {"type": "string", "description": "Path to after .docx file"},
+                "file": {"type": "string", "description": "Original file"},
+                "other_file": {"type": "string", "description": "Modified file to compare against"},
             },
-            "required": ["before", "after"],
+            "required": ["file", "other_file"],
+        },
+    },
+    {
+        "name": "docx_selection_context",
+        "description": "Extracts rich selection context (surrounding paragraphs, section heading, document profile) for a highlighted block.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "file": {"type": "string", "description": "Path to .docx file"},
+                "block_id": {"type": "string", "description": "Target block ID (e.g. 'blk_0001' or 'p_0004')"},
+                "start": {"type": "integer", "default": 0, "description": "Selection start offset"},
+                "end": {"type": "integer", "default": 0, "description": "Selection end offset"},
+            },
+            "required": ["file", "block_id"],
+        },
+    },
+    {
+        "name": "docx_research_claim",
+        "description": "Finds verified academic sources for a claim without fabricating paper titles, authors, or DOIs.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "claim": {"type": "string", "description": "Theoretical or empirical claim to verify"},
+                "style": {"type": "string", "default": "apa", "description": "Citation style (apa, ieee, academic-vn)"},
+            },
+            "required": ["claim"],
+        },
+    },
+    {
+        "name": "docx_generate_diagram",
+        "description": "Synthesizes structured Mermaid and SVG diagrams (architecture, flowchart, sequence, ER).",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "type": {"type": "string", "default": "architecture", "description": "Diagram type (architecture, flowchart)"},
+                "title": {"type": "string", "default": "System Architecture", "description": "Diagram title"},
+                "items": {"type": "array", "items": {"type": "string"}, "description": "Components or process steps"},
+            },
+            "required": ["items"],
+        },
+    },
+    {
+        "name": "docx_visual_verify",
+        "description": "Performs visual layout verification detecting image/table overflows, orphan headings, and blank pages.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "file": {"type": "string", "description": "Path to .docx file"},
+            },
+            "required": ["file"],
+        },
+    },
+    {
+        "name": "docx_clarify",
+        "description": "Assesses user prompt for material ambiguity and returns multiple-choice clarification if needed.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "instruction": {"type": "string", "description": "User instruction"},
+                "selected_text": {"type": "string", "description": "Selected text slice"},
+            },
+            "required": ["instruction"],
         },
     },
     {
@@ -351,8 +413,10 @@ def handle_tool_call(name: str, args: Dict[str, Any]) -> Dict[str, Any]:
         )
 
     elif name == "docx_diff":
-        agent = DocumentAgent(args["before"])
-        diff_rep = agent.diff(args["after"])
+        before_f = args.get("file") or args.get("before")
+        after_f = args.get("other_file") or args.get("after")
+        agent = DocumentAgent(before_f)
+        diff_rep = agent.diff(after_f)
         return diff_rep.model_dump()
 
     elif name == "docx_apply_plan":
@@ -362,6 +426,51 @@ def handle_tool_call(name: str, args: Dict[str, Any]) -> Dict[str, Any]:
         plan_res = agent.apply_plan(plan_data)
         saved = agent.save(output_path=out_p)
         return {"success": True, "plan_result": plan_res, "document": saved}
+
+    elif name == "docx_selection_context":
+        agent = DocumentAgent(file_p)
+        ctx = agent.get_selection_context(
+            block_id=args["block_id"],
+            start=args.get("start", 0),
+            end=args.get("end", 0),
+        )
+        return ctx.model_dump()
+
+    elif name == "docx_research_claim":
+        from docx_agent.research.provider import ResearchAssistant
+        res_assistant = ResearchAssistant()
+        proposal = res_assistant.evaluate_claim_and_propose_citation(
+            claim=args["claim"],
+            citation_style=args.get("style", "apa"),
+        )
+        return proposal.model_dump()
+
+    elif name == "docx_generate_diagram":
+        from docx_agent.media.diagrams import DiagramSynthesizer
+        diag_type = args.get("type", "architecture")
+        if diag_type == "flowchart":
+            diag = DiagramSynthesizer.generate_flowchart(args["items"], title=args.get("title", "Process Flow"))
+        else:
+            diag = DiagramSynthesizer.generate_architecture_diagram(args["items"], title=args.get("title", "System Architecture"))
+        return diag.model_dump()
+
+    elif name == "docx_visual_verify":
+        from docx_agent.adapters.docx import DocxImporter
+        from docx_agent.verification.visual import VisualLayoutVerifier
+        doc_node = DocxImporter.import_docx(file_p)
+        rep = VisualLayoutVerifier.verify_document_layout(doc_node)
+        return rep.model_dump()
+
+    elif name == "docx_clarify":
+        from docx_agent.engine.clarification import ClarificationEngine
+        conf, req = ClarificationEngine.assess_instruction(
+            instruction=args["instruction"],
+            selected_text=args.get("selected_text"),
+        )
+        return {
+            "confidence": conf.value,
+            "clarification_request": req.model_dump() if req else None,
+        }
 
     else:
         raise ValueError(f"Unknown MCP tool: {name}")

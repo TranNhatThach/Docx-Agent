@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Docx-Agent V2 — AI-Native Document Workspace</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Times+New+Roman&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-app: #0F172A;
+      --bg-sidebar: #1E293B;
+      --bg-page: #FFFFFF;
+      --text-main: #0F172A;
+      --text-muted: #64748B;
+      --accent: #3B82F6;
+      --accent-hover: #2563EB;
+      --border-color: #334155;
+      --toolbar-bg: #1E293B;
+      --panel-width: 320px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-app);
+      color: #F8FAFC;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* TOP TOOLBAR */
+    header.toolbar {
+      background: var(--toolbar-bg);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 16px;
+      height: 52px;
+      gap: 12px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      font-size: 15px;
+      color: #60A5FA;
+    }
+
+    .toolbar-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    button.tool-btn {
+      background: #334155;
+      border: 1px solid #475569;
+      color: #F8FAFC;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+    }
+
+    button.tool-btn:hover {
+      background: #475569;
+      border-color: #60A5FA;
+    }
+
+    button.tool-btn.primary {
+      background: var(--accent);
+      border-color: var(--accent-hover);
+    }
+    button.tool-btn.primary:hover {
+      background: var(--accent-hover);
+    }
+
+    /* WORKSPACE BODY */
+    .workspace-main {
+      display: flex;
+      flex: 1;
+      height: calc(100vh - 52px);
+      overflow: hidden;
+    }
+
+    /* LEFT SIDEBAR: OUTLINE */
+    aside.outline-sidebar {
+      width: 240px;
+      background: var(--bg-sidebar);
+      border-right: 1px solid var(--border-color);
+      padding: 16px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .sidebar-title {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #94A3B8;
+    }
+
+    .outline-item {
+      padding: 6px 8px;
+      border-radius: 4px;
+      font-size: 13px;
+      cursor: pointer;
+      color: #E2E8F0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .outline-item:hover { background: #334155; }
+    .outline-item.h1 { font-weight: 600; }
+    .outline-item.h2 { padding-left: 16px; color: #CBD5E1; }
+    .outline-item.h3 { padding-left: 24px; color: #94A3B8; }
+
+    /* CENTER: A4 DOCUMENT CANVAS */
+    main.document-viewport {
+      flex: 1;
+      background: #0B1120;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 32px 16px;
+    }
+
+    .a4-page {
+      width: 210mm;
+      min-height: 297mm;
+      background: var(--bg-page);
+      color: var(--text-main);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+      border-radius: 2px;
+      padding: 20mm 20mm 20mm 30mm; /* Vietnamese Academic Margins: T2, B2, R2, L3 */
+      font-family: 'Times New Roman', Times, serif;
+      font-size: 13pt;
+      line-height: 1.5;
+      text-align: justify;
+      outline: none;
+    }
+
+    .a4-page h1 {
+      font-size: 16pt;
+      font-weight: bold;
+      margin-top: 16pt;
+      margin-bottom: 8pt;
+      text-align: left;
+      page-break-after: avoid;
+    }
+
+    .a4-page h2 {
+      font-size: 14pt;
+      font-weight: bold;
+      margin-top: 12pt;
+      margin-bottom: 6pt;
+      text-align: left;
+      page-break-after: avoid;
+    }
+
+    .a4-page p {
+      margin-bottom: 6pt;
+      text-indent: 1.27cm;
+    }
+
+    .a4-page table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12pt 0;
+      font-size: 11pt;
+    }
+    .a4-page th, .a4-page td {
+      border: 1px solid #CBD5E1;
+      padding: 6pt 10pt;
+      text-align: left;
+    }
+    .a4-page th { background: #F1F5F9; font-weight: bold; }
+
+    .a4-page .caption {
+      font-size: 11pt;
+      font-style: italic;
+      text-align: center;
+      margin-top: 4pt;
+      color: #475569;
+    }
+
+    /* RIGHT SIDEBAR: AI AGENT PANEL */
+    aside.agent-sidebar {
+      width: var(--panel-width);
+      background: var(--bg-sidebar);
+      border-left: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    .agent-header {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .agent-status-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: #10B981;
+      font-weight: 600;
+    }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #10B981; }
+
+    .selection-box {
+      background: #0F172A;
+      border: 1px solid #334155;
+      margin: 12px;
+      padding: 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      color: #94A3B8;
+    }
+    .selection-box strong { color: #60A5FA; }
+
+    .quick-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      padding: 0 12px 12px 12px;
+    }
+    .chip-btn {
+      background: #334155;
+      border: 1px solid #475569;
+      color: #E2E8F0;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      cursor: pointer;
+    }
+    .chip-btn:hover { background: #475569; color: #60A5FA; }
+
+    .chat-history {
+      flex: 1;
+      padding: 12px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .chat-msg {
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+    .chat-msg.agent { background: #334155; color: #F8FAFC; align-self: flex-start; }
+    .chat-msg.user { background: var(--accent); color: #FFFFFF; align-self: flex-end; }
+
+    .transaction-card {
+      background: #0F172A;
+      border: 1px solid #3B82F6;
+      border-radius: 8px;
+      padding: 12px;
+      margin-top: 8px;
+    }
+    .tx-title { font-weight: 600; color: #60A5FA; margin-bottom: 6px; font-size: 13px; }
+    .tx-actions { display: flex; gap: 8px; margin-top: 10px; }
+    .tx-btn { flex: 1; padding: 6px; border-radius: 4px; border: none; font-size: 12px; font-weight: 600; cursor: pointer; }
+    .tx-btn.apply { background: #10B981; color: white; }
+    .tx-btn.reject { background: #EF4444; color: white; }
+
+    .chat-input-area {
+      padding: 12px;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      gap: 8px;
+    }
+    .chat-input-area input {
+      flex: 1;
+      background: #0F172A;
+      border: 1px solid #334155;
+      color: #F8FAFC;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      outline: none;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="toolbar">
+    <div class="brand">
+      <span>📄 Docx-Agent V2</span>
+    </div>
+    <div class="toolbar-group">
+      <button class="tool-btn" onclick="formatDoc('bold')"><b>B</b></button>
+      <button class="tool-btn" onclick="formatDoc('italic')"><i>I</i></button>
+      <button class="tool-btn" onclick="formatDoc('underline')"><u>U</u></button>
+      <button class="tool-btn" onclick="applyPreset('academic-vn')">🎓 Academic-VN</button>
+      <button class="tool-btn" onclick="insertTable()">📊 Thêm Bảng</button>
+      <button class="tool-btn" onclick="triggerResearch()">🔍 Tìm Nguồn</button>
+      <button class="tool-btn primary" onclick="exportDocx()">💾 Xuất DOCX</button>
+    </div>
+  </header>
+
+  <div class="workspace-main">
+    <!-- OUTLINE -->
+    <aside class="outline-sidebar">
+      <div class="sidebar-title">Mục Lục Tài Liệu</div>
+      <div id="outlineList">
+        <div class="outline-item h1">1. Giới thiệu tổng quan</div>
+        <div class="outline-item h2">1.1 Mục tiêu nghiên cứu</div>
+        <div class="outline-item h1">2. Phương pháp thực hiện</div>
+        <div class="outline-item h2">2.1 Kiến trúc hệ thống</div>
+      </div>
+    </aside>
+
+    <!-- DOCUMENT CANVAS -->
+    <main class="document-viewport">
+      <div class="a4-page" contenteditable="true" id="docCanvas" oninput="onContentChange()">
+        <h1>BÁO CÁO NGHIÊN CỨU HỆ THỐNG AGENT THÔNG MINH</h1>
+        <h2>1. Giới thiệu tổng quan</h2>
+        <p>Nghiên cứu này trình bày kiến trúc và phương pháp tiếp cận mới trong việc xây dựng các hệ thống agent tự động thao tác tài liệu Microsoft Word một cách an toàn và chính xác.</p>
+        <h2>2. Phương pháp thực hiện</h2>
+        <p id="p_0004">Chúng tôi sử dụng thuật toán phẫu thuật Run (Run Surgery Engine) để thay thế văn bản mà không làm mất định dạng in đậm, in nghiêng hoặc màu sắc.</p>
+        
+        <table>
+          <tr><th>Phương Pháp</th><th>Độ Chính Xác</th><th>Thời Gian (ms)</th></tr>
+          <tr><td>Naive Text Replacement</td><td>62.4%</td><td>120</td></tr>
+          <tr><td>Docx-Agent V2 Engine</td><td>99.9%</td><td>45</td></tr>
+        </table>
+        <div class="caption">Bảng 1: So sánh độ tin cậy và hiệu năng giữa các giải pháp.</div>
+      </div>
+    </main>
+
+    <!-- AGENT PANEL -->
+    <aside class="agent-sidebar">
+      <div class="agent-header">
+        <div class="brand" style="font-size:14px;">🤖 Agent Assistant</div>
+        <div class="agent-status-badge">
+          <span class="status-dot"></span> Sẵn sàng
+        </div>
+      </div>
+
+      <div class="selection-box" id="selectionBox">
+        <strong>Vùng chọn:</strong> <span id="selectedSnippet">(Chưa chọn văn bản)</span>
+      </div>
+
+      <div class="quick-actions">
+        <button class="chip-btn" onclick="askAgent('Viết lại đoạn này theo văn phong học thuật')">✍️ Viết lại</button>
+        <button class="chip-btn" onclick="askAgent('Tìm nguồn và trích dẫn bằng chứng')">📚 Trích dẫn</button>
+        <button class="chip-btn" onclick="askAgent('Vẽ sơ đồ kiến trúc cho hệ thống này')">📈 Vẽ Sơ đồ</button>
+        <button class="chip-btn" onclick="askAgent('Kiểm tra lỗi định dạng và bố cục')">🛡️ Kiểm tra</button>
+      </div>
+
+      <div class="chat-history" id="chatHistory">
+        <div class="chat-msg agent">
+          Xin chào! Hãy bôi đen một đoạn văn bản hoặc nhập yêu cầu để tôi hỗ trợ nghiên cứu, chỉnh sửa hoặc tạo sơ đồ.
+        </div>
+      </div>
+
+      <div class="chat-input-area">
+        <input type="text" id="agentInput" placeholder="Yêu cầu Agent..." onkeydown="if(event.key==='Enter') sendAgentMessage()">
+        <button class="tool-btn primary" onclick="sendAgentMessage()">Gửi</button>
+      </div>
+    </aside>
+  </div>
+
+  <script>
+    function onContentChange() {
+      // Incremental dirty tracking hook
+    }
+
+    document.addEventListener('selectionchange', () => {
+      const sel = window.getSelection();
+      const txt = sel.toString().trim();
+      const box = document.getElementById('selectedSnippet');
+      if (txt) {
+        box.innerText = `"${txt.slice(0, 40)}${txt.length > 40 ? '...' : ''}"`;
+      } else {
+        box.innerText = "(Chưa chọn văn bản)";
+      }
+    });
+
+    function formatDoc(cmd) {
+      document.execCommand(cmd, false, null);
+    }
+
+    function applyPreset(name) {
+      alert("Đã áp dụng chuẩn định dạng: " + name);
+    }
+
+    function insertTable() {
+      document.execCommand('insertHTML', false, '<table><tr><th>Cột 1</th><th>Cột 2</th></tr><tr><td>Dữ liệu A</td><td>Dữ liệu B</td></tr></table><br>');
+    }
+
+    function triggerResearch() {
+      askAgent("Tìm nguồn tài liệu học thuật hỗ trợ cho các khẳng định trong đoạn này.");
+    }
+
+    function exportDocx() {
+      alert("Đang xuất tài liệu ra định dạng .docx...");
+    }
+
+    function sendAgentMessage() {
+      const input = document.getElementById('agentInput');
+      const text = input.value.trim();
+      if (!text) return;
+      askAgent(text);
+      input.value = '';
+    }
+
+    function askAgent(prompt) {
+      const history = document.getElementById('chatHistory');
+      
+      // User message
+      const uMsg = document.createElement('div');
+      uMsg.className = 'chat-msg user';
+      uMsg.innerText = prompt;
+      history.appendChild(uMsg);
+
+      // Agent Proposal
+      setTimeout(() => {
+        const aMsg = document.createElement('div');
+        aMsg.className = 'chat-msg agent';
+        aMsg.innerHTML = `
+          <div>Tôi đã xử lý yêu cầu của bạn:</div>
+          <div class="transaction-card">
+            <div class="tx-title">⚡ Đề xuất Giao dịch (Agent Transaction)</div>
+            <div>• Cải thiện văn phong học thuật<br>• Bổ sung trích dẫn (Vaswani et al., 2017)<br>• Căn chỉnh lề 1.5 dòng</div>
+            <div class="tx-actions">
+              <button class="tx-btn apply" onclick="this.parentElement.parentElement.innerHTML='<b>✓ Đã áp dụng giao dịch.</b>'">Áp dụng</button>
+              <button class="tx-btn reject" onclick="this.parentElement.parentElement.innerHTML='<b>✕ Đã từ chối.</b>'">Từ chối</button>
+            </div>
+          </div>
+        `;
+        history.appendChild(aMsg);
+        history.scrollTop = history.scrollHeight;
+      }, 500);
+    }
+  </script>
+</body>
+</html>

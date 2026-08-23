@@ -1,11 +1,13 @@
 """
 DocumentAgent: High-level Python API orchestrating all document capabilities,
-transactional safety, format preservation, and agent-native operations.
+transactional safety, format preservation, and agent-native operations (v2.0 Workspace Edition).
 """
 
 from pathlib import Path
-from typing import Dict, Any, List, Optional, Union
+from typing import Dict, Any, List, Optional, Union, Tuple
 import docx
+from docx.document import Document as DocxDocument
+
 from docx_agent.core.document import DocumentModel
 from docx_agent.core.elements import DocumentSummary, ParagraphInfo, TableInfo, SectionInfo
 from docx_agent.core.resolver import TargetResolver
@@ -27,6 +29,36 @@ from docx_agent.operations.headers import HeaderOperations
 from docx_agent.operations.footers import FooterOperations
 from docx_agent.operations.fields import FieldOperations
 from docx_agent.operations.academic import AcademicOperations
+
+from docx_agent.canonical.model import (
+    DocumentNode,
+    SectionNode,
+    ParagraphBlock,
+    HeadingBlock,
+    TableBlock,
+    ImageBlock,
+    DiagramBlock,
+    SourceMetadata,
+    CitationNode,
+)
+from docx_agent.adapters.docx import DocxImporter, DocxExporter
+from docx_agent.engine.operations import (
+    DocOperation,
+    InsertTextOp,
+    DeleteTextOp,
+    ReplaceTextOp,
+    FormatParagraphOp,
+    InsertBlockOp,
+    DeleteBlockOp,
+    InsertCitationOp,
+)
+from docx_agent.engine.transactions import AgentTransactionManager, TransactionPreview
+from docx_agent.engine.selection import SelectionProvider, SelectionContext
+from docx_agent.research.provider import ResearchAssistant, ResearchProposal
+from docx_agent.media.diagrams import DiagramSynthesizer
+from docx_agent.engine.clarification import ClarificationEngine, ClarificationRequest, AgentConfidence
+from docx_agent.verification.visual import VisualLayoutVerifier, VisualVerificationReport
+
 from docx_agent.transactions.transaction import TransactionContext
 from docx_agent.transactions.backup import BackupManager
 from docx_agent.verification.validator import DocumentValidator, ValidationReport
@@ -39,14 +71,19 @@ from docx_agent.utils.unicode import normalize_unicode, normalize_comparison
 
 class DocumentAgent:
     """
-    Universal Agent-Native DOCX manipulation engine.
+    Universal Agent-Native DOCX manipulation engine & Workspace collaborator.
     """
 
-    def __init__(self, doc_or_path: Optional[Union[str, Path, docx.Document]] = None):
+    def __init__(self, doc_or_path: Optional[Union[str, Path, DocxDocument]] = None):
         if doc_or_path is None:
             self.model = DocumentModel(docx.Document())
+            self.canonical_doc = DocumentNode()
+        elif isinstance(doc_or_path, (str, Path)) and Path(doc_or_path).exists():
+            self.model = DocumentModel(doc_or_path)
+            self.canonical_doc = DocxImporter.import_docx(doc_or_path)
         else:
             self.model = DocumentModel(doc_or_path)
+            self.canonical_doc = DocumentNode()
 
         self._init_subsystems()
 
@@ -63,6 +100,10 @@ class DocumentAgent:
         self.footers = FooterOperations(self.model)
         self.fields = FieldOperations(self.model)
         self.academic = AcademicOperations(self.model)
+
+        # V2 Workspace Engines
+        self.tx_manager = AgentTransactionManager(self.canonical_doc)
+        self.research = ResearchAssistant()
 
     # ---------------------------------------------------------
     # INSPECTION & DISCOVERY
@@ -144,12 +185,18 @@ class DocumentAgent:
         style: Optional[str] = None,
     ) -> str:
         """Inserts paragraph before/after target."""
-        return self.content.insert_paragraph(
+        new_id = self.content.insert_paragraph(
             text=text,
             target=target,
             position=position,
             style=style,
         )
+        # Mirror to canonical model
+        if self.canonical_doc.sections:
+            self.canonical_doc.sections[0].blocks.append(
+                ParagraphBlock(style_name=style or "Normal")
+            )
+        return new_id
 
     def append(
         self,
@@ -158,6 +205,16 @@ class DocumentAgent:
         heading_level: Optional[int] = None,
     ) -> str:
         """Appends paragraph or heading."""
+        if heading_level is not None or (style and style.startswith("Heading")):
+            lvl = heading_level or int("".join(filter(str.isdigit, style or "1")) or 1)
+            self.canonical_doc.sections[0].blocks.append(
+                HeadingBlock(level=lvl, style_name=style or f"Heading {lvl}")
+            )
+        else:
+            self.canonical_doc.sections[0].blocks.append(
+                ParagraphBlock(style_name=style or "Normal")
+            )
+
         return self.content.append_paragraph(
             text=text,
             style=style,
@@ -214,6 +271,57 @@ class DocumentAgent:
         return self.fields.insert_toc(**kwargs)
 
     # ---------------------------------------------------------
+    # V2 WORKSPACE & AGENT FEATURES
+    # ---------------------------------------------------------
+    def get_selection_context(self, block_id: str, start: int = 0, end: int = 0) -> SelectionContext:
+        """Extracts rich context for selected block and text slice."""
+        return SelectionProvider.build_context(self.canonical_doc, block_id, start, end)
+
+    def propose_agent_transaction(self, description: str, operations: List[DocOperation]) -> TransactionPreview:
+        """Proposes a multi-operation transaction with user preview."""
+        return self.tx_manager.propose_transaction(description, operations)
+
+    def apply_agent_transaction(self, transaction_id: str) -> bool:
+        """Applies an approved transaction."""
+        return self.tx_manager.apply_pending_transaction(transaction_id)
+
+    def reject_agent_transaction(self, transaction_id: str) -> bool:
+        """Rejects a transaction."""
+        return self.tx_manager.reject_pending_transaction(transaction_id)
+
+    def undo(self) -> bool:
+        """Undoes the most recent operation or agent transaction."""
+        return self.tx_manager.undo()
+
+    def redo(self) -> bool:
+        """Redoes the most recently undone operation."""
+        return self.tx_manager.redo()
+
+    def research_claim(self, claim: str, style: str = "apa") -> ResearchProposal:
+        """Searches verified sources and constructs un-hallucinated citation proposal."""
+        return self.research.evaluate_claim_and_propose_citation(claim, citation_style=style)
+
+    def insert_citation(self, block_id: str, offset: int, source: SourceMetadata, style: str = "apa") -> bool:
+        """Inserts citation into canonical model and paragraph."""
+        op = InsertCitationOp(block_id=block_id, offset=offset, source=source, citation_style=style)
+        return self.tx_manager.execute_operation(op)
+
+    def generate_diagram(self, diag_type: str, items: List[str], title: str = "Architecture") -> DiagramBlock:
+        """Synthesizes structured Mermaid & SVG diagram."""
+        if diag_type == "flowchart":
+            return DiagramSynthesizer.generate_flowchart(items, title=title)
+        else:
+            return DiagramSynthesizer.generate_architecture_diagram(items, title=title)
+
+    def clarify_instruction(self, instruction: str, selected_text: Optional[str] = None) -> Tuple[AgentConfidence, Optional[ClarificationRequest]]:
+        """Assesses ambiguity and returns multiple-choice questions if confidence is low."""
+        return ClarificationEngine.assess_instruction(
+            instruction=instruction,
+            selected_text=selected_text,
+            document_profile=self.canonical_doc.profile.value,
+        )
+
+    # ---------------------------------------------------------
     # VERIFICATION & DIFF
     # ---------------------------------------------------------
     def verify(
@@ -223,7 +331,7 @@ class DocumentAgent:
         expected_line_spacing: Optional[float] = None,
         expected_alignment: Optional[str] = None,
     ) -> Dict[str, Any]:
-        """Runs integrity validation and formatting verification."""
+        """Runs dual verification: structural integrity, formatting checks, and visual layout."""
         format_rep = FormatChecker.verify_document_formatting(
             doc_or_path=self.model.doc,
             expected_font=expected_font,
@@ -231,9 +339,13 @@ class DocumentAgent:
             expected_line_spacing=expected_line_spacing,
             expected_alignment=expected_alignment,
         )
+        visual_rep = VisualLayoutVerifier.verify_document_layout(self.canonical_doc)
+
         return {
             "integrity_passed": True,
             "format_verification": format_rep.model_dump(),
+            "visual_layout_verification": visual_rep.model_dump(),
+            "dual_verification_passed": format_rep.passed and visual_rep.passed,
         }
 
     def diff(self, other_path: Union[str, Path]) -> DocumentDiffReport:
@@ -244,9 +356,7 @@ class DocumentAgent:
     # BATCH PLAN EXECUTION
     # ---------------------------------------------------------
     def apply_plan(self, plan: Union[Dict[str, Any], BatchPlanSchema]) -> Dict[str, Any]:
-        """
-        Executes a multi-operation plan atomically with pre-validation and rollback.
-        """
+        """Executes multi-operation plan atomically."""
         if isinstance(plan, dict):
             plan_obj = BatchPlanSchema(**plan)
         else:
@@ -327,3 +437,8 @@ class DocumentAgent:
 
         self.model.file_path = str(target_path)
         return str(target_path)
+
+    def export_canonical(self, output_path: Union[str, Path]) -> str:
+        """Exports Canonical Document Model to DOCX format."""
+        out_p = DocxExporter.export_docx(self.canonical_doc, output_path)
+        return str(out_p)

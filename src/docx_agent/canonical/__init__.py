@@ -1,0 +1,51 @@
+"""
+Canonical Document Model package exports.
+"""
+
+from docx_agent.canonical.model import (
+    generate_id,
+    DocumentProfile,
+    BlockType,
+    ProvenanceType,
+    ProvenanceRecord,
+    RunNode,
+    BaseBlockNode,
+    ParagraphBlock,
+    HeadingBlock,
+    ListItemBlock,
+    TableCellNode,
+    TableBlock,
+    ImageBlock,
+    DiagramBlock,
+    UnsupportedBlock,
+    BlockNode,
+    SectionProperties,
+    SectionNode,
+    SourceMetadata,
+    CitationNode,
+    DocumentNode,
+)
+
+__all__ = [
+    "generate_id",
+    "DocumentProfile",
+    "BlockType",
+    "ProvenanceType",
+    "ProvenanceRecord",
+    "RunNode",
+    "BaseBlockNode",
+    "ParagraphBlock",
+    "HeadingBlock",
+    "ListItemBlock",
+    "TableCellNode",
+    "TableBlock",
+    "ImageBlock",
+    "DiagramBlock",
+    "UnsupportedBlock",
+    "BlockNode",
+    "SectionProperties",
+    "SectionNode",
+    "SourceMetadata",
+    "CitationNode",
+    "DocumentNode",
+]

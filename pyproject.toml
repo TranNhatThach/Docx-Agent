@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "docx-agent"
-version = "1.0.0"
-description = "Universal, agent-native Microsoft Word (.docx) manipulation engine for AI coding agents"
+version = "2.0.0"
+description = "Universal Open-Source DOCX Agent Platform & AI-Native Document Workspace"
 readme = "README.md"
 authors = [
     { name = "Tran Nhat Thach", email = "thachtn@example.com" }

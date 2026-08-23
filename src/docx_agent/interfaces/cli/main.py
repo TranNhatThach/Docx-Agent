@@ -433,9 +433,85 @@ def cmd_md2docx(
     """Converts a Markdown file to a styled DOCX document."""
     try:
         out_docx = output or str(Path(md_file).with_suffix(".docx"))
-        saved = MarkdownToDocxConverter.convert(md_file, out_docx, preset=preset)
-        res = {"success": True, "operation": "md2docx", "output": saved, "preset": preset}
+        converter = MarkdownToDocxConverter(preset_name=preset)
+        res_p = converter.convert(md_file, out_docx)
+        res = {"success": True, "operation": "md2docx", "output": str(res_p)}
         output_result(res, as_json=as_json)
+    except Exception as e:
+        err_console.print(f"[bold red]Error:[/bold red] {str(e)}")
+        sys.exit(1)
+
+
+@app.command("workspace")
+def cmd_workspace(
+    file_path: Optional[str] = typer.Argument(None, help="Path to .docx file to open"),
+    port: int = typer.Option(8765, "--port", "-p", help="HTTP port to host workspace"),
+    no_browser: bool = typer.Option(False, "--no-browser", help="Do not automatically open browser"),
+):
+    """Launches the interactive AI-Native Document Workspace."""
+    try:
+        from docx_agent.interfaces.workspace.server import WorkspaceServer
+        WorkspaceServer.launch(file_path=file_path, port=port, open_browser=not no_browser)
+    except Exception as e:
+        err_console.print(f"[bold red]Error:[/bold red] {str(e)}")
+        sys.exit(1)
+
+
+@app.command("visual-verify")
+def cmd_visual_verify(
+    file_path: str = typer.Argument(..., help="Path to .docx file"),
+    as_json: bool = typer.Option(False, "--json", help="Output machine-readable JSON"),
+):
+    """Executes visual layout verification (overflows, whitespace, heading hierarchy)."""
+    try:
+        from docx_agent.adapters.docx import DocxImporter
+        from docx_agent.verification.visual import VisualLayoutVerifier
+        doc_node = DocxImporter.import_docx(file_path)
+        rep = VisualLayoutVerifier.verify_document_layout(doc_node)
+        output_result(rep, as_json=as_json)
+    except Exception as e:
+        err_console.print(f"[bold red]Error:[/bold red] {str(e)}")
+        sys.exit(1)
+
+
+@app.command("research")
+def cmd_research(
+    claim: str = typer.Argument(..., help="Factual or theoretical claim to research"),
+    style: str = typer.Option("apa", "--style", help="Citation style (apa, ieee, academic-vn)"),
+    as_json: bool = typer.Option(False, "--json", help="Output machine-readable JSON"),
+):
+    """Finds verified sources for a claim without hallucinating citations."""
+    try:
+        from docx_agent.research.provider import ResearchAssistant
+        res_assistant = ResearchAssistant()
+        proposal = res_assistant.evaluate_claim_and_propose_citation(claim, citation_style=style)
+        output_result(proposal, as_json=as_json)
+    except Exception as e:
+        err_console.print(f"[bold red]Error:[/bold red] {str(e)}")
+        sys.exit(1)
+
+
+@app.command("diagram")
+def cmd_diagram(
+    diagram_type: str = typer.Option("architecture", "--type", "-t", help="Diagram type (architecture, flowchart)"),
+    title: str = typer.Option("System Architecture", "--title", help="Diagram title"),
+    items: List[str] = typer.Option(..., "--item", "-i", help="Components or steps in diagram"),
+    output_svg: Optional[str] = typer.Option(None, "--output-svg", help="Save rendered SVG to file"),
+    as_json: bool = typer.Option(False, "--json", help="Output machine-readable JSON"),
+):
+    """Synthesizes structured Mermaid and SVG diagrams."""
+    try:
+        from docx_agent.media.diagrams import DiagramSynthesizer
+        if diagram_type == "flowchart":
+            diag = DiagramSynthesizer.generate_flowchart(items, title=title)
+        else:
+            diag = DiagramSynthesizer.generate_architecture_diagram(items, title=title)
+
+        if output_svg and diag.rendered_svg:
+            with open(output_svg, "w", encoding="utf-8") as f:
+                f.write(diag.rendered_svg)
+
+        output_result(diag, as_json=as_json)
     except Exception as e:
         err_console.print(f"[bold red]Error:[/bold red] {str(e)}")
         sys.exit(1)

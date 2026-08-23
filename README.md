@@ -1,254 +1,149 @@
-# Universal DOCX Agent Platform (`docx-agent`)
+# Docx-Agent V2: AI-Native Document Workspace & Engine 🚀
 
-[![CI Tests](https://img.shields.io/badge/tests-26%20passed-brightgreen.svg)]()
-[![Python Version](https://img.shields.io/badge/python-3.10%2B-blue.svg)]()
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![MCP Protocol](https://img.shields.io/badge/MCP-2024--11--05-purple.svg)]()
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![Tests](https://img.shields.io/badge/tests-36%2F36%20passing-brightgreen.svg)]()
+[![Architecture: V2 Workspace](https://img.shields.io/badge/Architecture-AI--Native%20Workspace-orange.svg)]()
 
-**A universal, agent-native Microsoft Word (`.docx`) manipulation engine that allows AI coding agents to read, understand, modify, format, generate, validate, and repair Word documents safely.**
-
----
-
-## 🌟 Vision & Design Philosophy
-
-Traditional script-based tools manipulate Word documents by overwriting paragraph text (`p.text = ...`), causing catastrophic destruction of inline run properties, bold/italic stylings, font families, colors, hyperlinks, and document structure.
-
-`docx-agent` is built from the ground up on the **Agent-Native Document Protocol**:
-
-$$\text{LLM Proposes} \longrightarrow \text{Resolver Validates} \longrightarrow \text{Engine Executes (Atomic)} \longrightarrow \text{Verifier Confirms} \longrightarrow \text{Agent Reports}$$
-
-### Core Tenets:
-- **Agent-Agnostic Core**: Antigravity, Claude Code, Cursor, Codex, Cline, and Roo Code connect seamlessly via standard MCP (Model Context Protocol) and CLI.
-- **Strict Format Preservation**: Deep character-to-run surgery preserves unaffected formatting, colors, and hyperlinks even during multi-run substring replacements.
-- **Atomic Transactions & Rollback**: Every mutation stages changes to a sandbox, reopens independently, verifies integrity, and rolls back cleanly if validation fails.
-- **No Fake Features**: True OpenXML field integration for dynamic page numbering (`PAGE` / `NUMPAGES`), Tables of Contents (`TOC`), and table headers.
-- **Institutional Presets**: Built-in styling engines for Vietnamese Academic theses (`academic-vn`), IEEE, APA, and Technical Reports.
+> **Universal, Agent-Native Microsoft Word (`.docx`) Manipulation Engine & Visual Document Workspace for Humans & AI Coding Agents.**
 
 ---
 
-## 🏗 Architecture
+## 🌟 What is Docx-Agent V2?
+
+Docx-Agent V2 transforms traditional file-level Word editing into a **unified AI-native workspace**. It bridges human writers, visual document canvases, and AI coding agents (Antigravity, Claude Code, Cursor, Codex, Cline, Roo Code) through a high-performance **Canonical Document Model** and deterministic **Operation Engine**.
 
 ```
-                  AI CODING AGENTS
-  (Antigravity / Claude Code / Cursor / Codex / Cline / Roo Code)
-                         │
-       ┌─────────────────┼─────────────────┐
-       │                 │                 │
-      CLI               MCP           Python API
-  (docx-agent)    (docx-agent-mcp)  (DocumentAgent)
-       │                 │                 │
-       └─────────────────┼─────────────────┘
-                         │
-              ┌──────────▼──────────┐
-              │   DOCX AGENT CORE   │
-              │                     │
-              │ Document Model      │
-              │ Target Resolver     │
-              │ Run Surgery Engine  │
-              │ Style & Presets     │
-              │ Tables & Images     │
-              │ Layout & Sections   │
-              │ Independent Verifier│
-              │ Atomic Transactions │
-              └──────────┬──────────┘
-                         │
-                ┌────────▼────────┐
-                │ python-docx     │
-                │ + OOXML Engine  │
-                └────────┬────────┘
-                         │
-                         ▼
-                Microsoft Word (.docx)
+    HUMAN                         AI CODING AGENTS
+      ↕                                  ↕
+VISUAL DOCUMENT WORKSPACE  ↔  SELECTION CONTEXT & AGENT CHAT
+      ↕                                  ↕
+            CANONICAL DOCUMENT ENGINE & TX MANAGER
+                                 ↕
+            DOCX IMPORT / EXPORT / DUAL VERIFICATION
+                                 ↕
+                       Microsoft Word (.docx)
 ```
 
 ---
 
-## 🚀 Installation
+## 🚀 Key Features
 
-Install directly via `pip` or `pipx`:
+### 1. Dual Representation & Decoupled State
+- **Canonical Document Model**: Documents are represented in-memory as a high-performance node tree (`DocumentNode`, `SectionNode`, `BlockNode`, `RunNode`, `CitationNode`).
+- **DOCX as Interchange Format**: Zero UI lag. Word files are imported and exported asynchronously with zero loss of unsupported XML elements.
 
-```bash
-pip install docx-agent
-```
+### 2. Selection-Aware Collaboration
+- Highlights instantly provide precise context (`block_id`, character offsets, surrounding paragraphs, active section headers, document profile) to the AI Agent.
 
-For development and local testing:
+### 3. Reversible Operation Engine & Multi-Op Transactions
+- Every mutation executes through deterministic, serializable, and reversible commands (`InsertTextOp`, `ReplaceTextOp`, `FormatParagraphOp`, `InsertCitationOp`).
+- Agent proposals are bundled into single **Agent Transactions** with rich diff previews and one-click full rollback.
+
+### 4. Zero-Hallucination Research Assistant & Citations
+- Evaluates empirical claims and attaches verified peer-reviewed sources.
+- First-class support for **APA 7th**, **IEEE**, and **Academic-VN** citation and reference list formatting without fabricating DOIs, authors, or publication years.
+
+### 5. Native Diagram & Media Synthesizer
+- Generates structured **Mermaid** and clean vector **SVG** diagrams (system architectures, flowcharts, sequence diagrams, and use-case maps) directly into documents.
+
+### 6. Ambiguity & Clarification Engine
+- Internal confidence assessment (`HIGH`, `MEDIUM`, `LOW`). If user intent is materially ambiguous (e.g. "rewrite this"), the agent prompts with structured multiple-choice options rather than guessing.
+
+### 7. Dual Verification (Structural + Visual Layout)
+- Reopens real `.docx` packages to verify XML validity, typography compliance, and visual layout constraints (overflows, clipped tables, orphan headings, excessive whitespace).
+
+---
+
+## 📦 Installation
 
 ```bash
 git clone https://github.com/TranNhatThach/Docx-Agent.git
 cd Docx-Agent
-pip install -e ".[dev,mcp]"
+pip install -e .
 ```
 
 ---
 
-## 💻 CLI Usage
+## 🖥️ Usage
 
-The CLI supports both rich visual output for humans and machine-readable JSON for AI coding agents (`--json`).
-
-### 1. Inspection & Discovery
+### Launch Interactive Visual Workspace
 ```bash
-# Inspect document structure, geometries, margins, and headings outline
-docx-agent inspect report.docx
-
-# Read paragraphs with deterministic element IDs (p_0001, p_0002...)
-docx-agent read report.docx --start 0 --end 20 --json
-
-# Find paragraphs matching substring, regex, or style
-docx-agent find report.docx --text "Phương pháp" --json
-docx-agent find report.docx --regex "^Chương \d+" --json
-
-# Check document capabilities and unsupported element warnings
-docx-agent capabilities report.docx --json
+docx-agent workspace report.docx
 ```
 
-### 2. Format-Preserving Content Operations
+### Inspect & Read Documents
 ```bash
-# Replace text while strictly preserving surrounding bold/italic/color runs
+# Structural summary
+docx-agent inspect report.docx --json
+
+# Read paragraphs with deterministic IDs
+docx-agent read report.docx --start 0 --end 10 --json
+```
+
+### Format-Preserving Replacement
+```bash
 docx-agent replace report.docx --target "thuật toán cũ" --replace "mô hình học sâu"
-
-# Insert paragraph before/after target element
-docx-agent insert report.docx --text "Nội dung bổ sung" --target "p_0012" --position "after"
-
-# Append paragraph or heading
-docx-agent append-para report.docx --text "Chương 4: Kết quả" --style "Heading 1"
 ```
 
-### 3. Typography, Spacing & Presets
+### Apply Academic Presets
 ```bash
-# Apply full Vietnamese Academic Thesis preset (A4, TNR 13pt, 1.5 spacing, justified)
 docx-agent preset report.docx --name "academic-vn"
-
-# Format character font properties
-docx-agent format-text report.docx --target "p_0005" --font-name "Times New Roman" --font-size-pt 14 --bold
-
-# Format paragraph layout and spacing
-docx-agent format-paragraph report.docx --target "p_0005" --alignment "justify" --line-spacing 1.5 --first-line-indent-cm 1.27
 ```
 
-### 4. Verification, Diff & Markdown Conversion
+### Research & Citations
 ```bash
-# Independently verify document integrity and typography conformance
-docx-agent verify report.docx --expected-font "Times New Roman" --expected-size 13.0 --json
+docx-agent research "Attention Is All You Need Transformer" --style "apa" --json
+```
 
-# Semantic diff between two DOCX revisions
-docx-agent diff before.docx after.docx --json
+### Generate System Architecture Diagrams
+```bash
+docx-agent diagram --type architecture --title "Hệ Thống Phân Tán" --item "Client UI" --item "API Gateway" --item "Agent Engine" --item "Vector Database" --json
+```
 
-# Convert Markdown file to professionally styled DOCX
-docx-agent md2docx report.md --output report.docx --preset "academic-vn"
+### Dual Verification
+```bash
+docx-agent visual-verify report.docx --json
+docx-agent verify report.docx --expected-font "Times New Roman" --json
 ```
 
 ---
 
-## 🔌 Model Context Protocol (MCP) Server
+## 🤖 MCP Server Setup (Antigravity / Claude Code / Cursor / Cline)
 
-`docx-agent` provides a first-class MCP server exposing high-level, format-preserving tools to any MCP-compatible coding agent.
+Add to your agent configuration:
 
-### Launch Command
-```bash
-docx-agent-mcp
-```
-
-### Configuration Examples
-
-#### Antigravity / Cursor / Claude Code (`mcp_config.json`):
 ```json
 {
   "mcpServers": {
     "docx-agent": {
-      "command": "docx-agent-mcp",
-      "args": []
+      "command": "docx-agent-mcp"
     }
   }
 }
 ```
 
-### Core MCP Tools Exposed:
-- `docx_inspect`: Structural summary and heading outline.
-- `docx_read`: Numbered paragraphs with stable element IDs.
-- `docx_find`: Search text, regex patterns, or styles.
-- `docx_replace`: Surgical format-preserving text replacements.
-- `docx_insert`: Element insertion before/after reference targets.
-- `docx_format_text`: Font family, sizing, bold, italic, colors.
-- `docx_format_paragraph`: Alignment, line spacing, margins.
-- `docx_preset`: Apply presets (`academic-vn`, `ieee`, `apa`, `technical-report`).
-- `docx_table`: Create and format data tables with repeating headers.
-- `docx_image`: Insert, position, and caption images.
-- `docx_verify`: Independent integrity and format verification.
-- `docx_diff`: Semantic revision diffing.
-- `docx_apply_plan`: Atomic batch plan execution with rollback.
+### Available MCP Tools:
+- `docx_inspect`: Summary and geometry inspection.
+- `docx_read`: Paragraph retrieval with deterministic IDs.
+- `docx_selection_context`: Selection-aware surrounding context extractor.
+- `docx_research_claim`: Un-hallucinated peer-reviewed citation discovery.
+- `docx_generate_diagram`: Mermaid & SVG diagram generation.
+- `docx_visual_verify`: Visual layout anomaly detection.
+- `docx_clarify`: Ambiguity assessment and multiple-choice options.
+- `docx_replace`, `docx_format_text`, `docx_format_paragraph`, `docx_preset`, `docx_table`, `docx_image`, `docx_diff`.
 
 ---
 
-## 🐍 Python SDK API
+## 🧪 Testing & Validation
 
-```python
-from docx_agent import DocumentAgent
-
-# Load or create document
-agent = DocumentAgent("thesis.docx")
-
-# Inspect document outline
-outline = agent.outline()
-
-# Apply institutional thesis preset
-agent.apply_preset("academic-vn")
-
-# Replace text without breaking inline bold / italic stylings
-agent.replace("mô hình BERT", "mô hình RoBERTa")
-
-# Insert data table
-table_id = agent.create_table(
-    rows=3,
-    cols=2,
-    data=[["Tham số", "Giá trị"], ["Epochs", "100"], ["Accuracy", "99.2%"]],
-)
-
-# Insert Table of Contents
-agent.insert_toc(title="MỤC LỤC")
-
-# Save with automatic transaction sandboxing and independent verification
-agent.save("thesis_final.docx", verify=True)
-```
-
----
-
-## 🛡 Transaction & Verification Safety Model
-
-Every mutation executed by `docx-agent` follows the strict atomic lifecycle:
-
-```
-VALIDATE SOURCE
-      ↓
-SHADOW BACKUP (.bak)
-      ↓
-LOAD & PARSE
-      ↓
-EXECUTE RUN SURGERY
-      ↓
-SAVE TO TEMP STAGING
-      ↓
-INDEPENDENT REOPEN & VERIFY
-      ↓
-COMMIT / ROLLBACK ON FAILURE
-```
-
----
-
-## 🧪 Testing
-
-The platform includes exhaustive unit, regression, and end-to-end integration tests:
-
+Run the complete 36-test suite:
 ```bash
 pytest tests/ -v
 ```
-
-- **Format Preservation Tests**: Verifies run boundary preservation across single and multi-run replacements.
-- **Vietnamese Unicode Fidelity**: Tests 100% accurate rendering of Vietnamese accents, typography marks, and mathematical symbols.
-- **Large Document Stress Tests**: Benchmarks execution against 1000+ paragraphs and 50+ tables.
-- **15-Step Master E2E Workflow**: End-to-end simulation covering presets, edits, tables, images, TOC, verification, and diffing.
 
 ---
 
 ## 📄 License
 
-This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
+Licensed under the [Apache License 2.0](LICENSE).

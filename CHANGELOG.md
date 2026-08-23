@@ -1,23 +1,40 @@
 # Changelog
 
-All notable changes to the `docx-agent` platform will be documented in this file.
+All notable changes to the **Docx-Agent** platform will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+---
+
+## [2.0.0] - 2026-08-23
+
+### Major Architecture Upgrade: AI-Native Document Workspace
+- **Canonical Document Model**: Decoupled in-memory runtime representation (`DocumentNode`, `SectionNode`, `BlockNode`, `RunNode`, `CitationNode`, `DiagramBlock`, `UnsupportedBlock`).
+- **Deterministic Operation Engine**: Reversible command architecture (`InsertTextOp`, `DeleteTextOp`, `ReplaceTextOp`, `FormatParagraphOp`, `InsertBlockOp`, `InsertCitationOp`, `CompositeOperation`).
+- **Selection-Aware Collaboration**: Rich selection context extractor capturing character ranges, surrounding paragraphs, active section headers, and document profiles.
+- **Agent Transaction Manager**: Multi-operation transaction staging, live preview diffs, atomic commit, and single-click full transaction rollback.
+- **Research Assistant & Citation Engine**: Real peer-reviewed evidence matching (APA, IEEE, Academic-VN) with strict anti-hallucination verification.
+- **Diagram & Media Synthesizer**: Native Mermaid/SVG generation for system architecture, flowcharts, sequence diagrams, and use cases.
+- **Ambiguity & Clarification Engine**: Confidence assessment triggering structured multiple-choice clarification questions on underspecified prompts.
+- **Dual Verification Engine**: Structural XML integrity + visual layout verification (image/table overflows, orphan headings, excessive whitespace).
+- **Interactive Visual Workspace**: Web-based A4 document canvas with typography toolbar, outline navigator, and live Agent chat.
+- **Full Backward Compatibility**: 100% test pass rate across all legacy v1.0 CLI commands, MCP tools, and Python SDK methods.
+
+---
+
 ## [1.0.0] - 2026-08-23
 
 ### Added
-- **Core Architecture**: `DocumentAgent` orchestrator, `DocumentModel`, and polymorphic `TargetResolver`.
-- **Run Surgery Engine**: Format-preserving cross-run text replacement engine with `<w:rPr>` cloning.
-- **Stable Identity System**: Deterministic context IDs (`p_0001`, `tbl_0001`, `sec_0001`).
-- **Formatting Engine**: Font family, font size, bold, italic, underline, strike, colors, alignments, line spacing, margins, indents.
-- **Style Engine**: Inspection, creation, updating, and applying paragraph/character styles.
-- **Academic Presets**: Built-in institutional presets (`academic-vn`, `ieee`, `apa`, `technical-report`).
-- **Tables & Images**: Table creation, cell editing, border styling, header row repeating, and image insertion with captions.
-- **OOXML Fields & TOC**: Native Word dynamic fields (`PAGE`, `NUMPAGES`, `DATE`, `TOC`).
-- **Transaction & Verification**: Atomic staging, pre-mutation shadow backup, independent reload validator, and format checking.
-- **Semantic Diff Engine**: Comprehensive document revision diffing returning structured JSON.
-- **Interfaces**: Rich Typer CLI with `--json` support, stdio MCP server (`docx-agent-mcp`), and Python SDK.
-- **Markdown Converter**: `md2docx` high-fidelity renderer.
-- **Test Suite**: 26 unit, integration, large-document stress, and 15-step master E2E acceptance tests.
+- Core Open-Source DOCX Agent Platform.
+- Run Surgery Engine for format-preserving cross-run text replacement.
+- Deterministic element identity mapping (`p_0001`, `tbl_0001`, `sec_0001`).
+- Typography and style engine (font families, sizes, colors, line spacing, margins, indents).
+- Academic thesis presets (`academic-vn`, `ieee`, `apa`, `technical-report`).
+- Table generator with repeating headers (`w:tblHeader`) and cell shading.
+- Dynamic OOXML fields (`PAGE`, `NUMPAGES`, `DATE`, `TOC`).
+- Atomic transactions with shadow `.bak` backups and independent reopen verification.
+- Model Context Protocol (MCP) server on stdio.
+- Typer CLI with `--json` machine-readable output.
+- Markdown to DOCX converter (`md2docx`).
+- 26 initial test cases.
