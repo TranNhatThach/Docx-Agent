@@ -113,6 +113,22 @@ class LayoutEngine:
                         "text": blk.full_text,
                         "style": blk.style_name or f"Heading {blk.level}",
                     })
+                elif isinstance(blk, ParagraphBlock) and blk.style_name:
+                    s_low = blk.style_name.lower().strip()
+                    if s_low in ("title", "tựa đề"):
+                        headings_outline.append({
+                            "id": blk.id,
+                            "level": 0,
+                            "text": blk.full_text,
+                            "style": blk.style_name,
+                        })
+                    elif s_low in ("subtitle", "phụ đề"):
+                        headings_outline.append({
+                            "id": blk.id,
+                            "level": 1,
+                            "text": blk.full_text,
+                            "style": blk.style_name,
+                        })
 
                 # Check explicit page break triggers
                 has_page_break = False

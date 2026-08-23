@@ -47,6 +47,7 @@ from docx_agent.verification.formatting import FormatChecker
 from docx_agent.verification.visual import VisualLayoutVerifier
 from docx_agent.utils.paths import resolve_safe_path, ensure_parent_dir
 from docx_agent.utils.unicode import normalize_unicode
+from docx_agent.changes.model import EditSession, ChangeObject, ChangeStatus, ChangeType
 
 
 class WorkspaceBridge:
@@ -370,3 +371,162 @@ class WorkspaceBridge:
             "status": "COMMITTED",
             "message": f"Đã áp dụng thành công {len(plan_dict.get('operations', []))} thao tác từ Antigravity Agent.",
         }
+
+    # ---------------------------------------------------------
+    # AI EDIT SESSIONS & CHANGE TRACKING BRIDGE
+    # ---------------------------------------------------------
+    @classmethod
+    def propose_edit_session_payload(
+        cls,
+        file_path: Union[str, Path],
+        task_description: str,
+        modified_doc_data: Dict[str, Any],
+        agent_id: str = "Antigravity-Agent",
+        reason: str = "Tối ưu hóa và cải thiện nội dung tài liệu theo chuẩn học thuật.",
+        confidence: float = 0.95,
+        evidence: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """
+        Creates an EditSession with semantic ChangeObjects by comparing current document with proposed candidate.
+        """
+        path = resolve_safe_path(file_path)
+        agent = DocumentAgent(path)
+
+        # Reconstruct candidate DocumentNode from JSON
+        from docx_agent.canonical.model import DocumentNode, SectionNode, ParagraphBlock, HeadingBlock, TableBlock, RunNode
+        candidate_doc = DocumentNode(title=modified_doc_data.get("title", path.stem))
+        candidate_doc.sections = []
+
+        for s_data in modified_doc_data.get("sections", []):
+            s_node = SectionNode(id=s_data.get("id", "sec_0001"))
+            for b_data in s_data.get("blocks", []):
+                b_type = b_data.get("type", "paragraph")
+                b_id = b_data.get("id", "blk_0001")
+                if b_type == "heading":
+                    s_node.blocks.append(
+                        HeadingBlock(
+                            id=b_id,
+                            level=b_data.get("level", 1),
+                            style_name=f"Heading {b_data.get('level', 1)}",
+                            runs=[RunNode(text=b_data.get("text", ""))],
+                        )
+                    )
+                elif b_type == "table":
+                    s_node.blocks.append(
+                        TableBlock(
+                            id=b_id,
+                            rows=b_data.get("rows", 0),
+                            columns=b_data.get("columns", 0),
+                        )
+                    )
+                else:
+                    s_node.blocks.append(
+                        ParagraphBlock(
+                            id=b_id,
+                            style_name=b_data.get("style_name", "Normal"),
+                            runs=[RunNode(text=b_data.get("text", ""))],
+                        )
+                    )
+            candidate_doc.sections.append(s_node)
+
+        session = agent.propose_changes(
+            modified_doc=candidate_doc,
+            task_description=task_description,
+            agent_id=agent_id,
+            reason=reason,
+            confidence=confidence,
+            evidence=evidence,
+        )
+
+        # Persist session to workspace storage for subsequent CLI commands
+        cls._save_session_cache(path, session)
+
+        return {
+            "success": True,
+            "session": session.model_dump(),
+            "changes_count": len(session.changes),
+            "summary": session.summary(),
+        }
+
+    @classmethod
+    def _get_session_cache_path(cls, file_path: Path) -> Path:
+        cache_dir = file_path.parent / ".docx_agent_workspace"
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        return cache_dir / f"session_{file_path.stem}.json"
+
+    @classmethod
+    def _save_session_cache(cls, file_path: Path, session: EditSession) -> None:
+        try:
+            cache_file = cls._get_session_cache_path(file_path)
+            with open(cache_file, "w", encoding="utf-8") as f:
+                json.dump(session.model_dump(), f, ensure_ascii=False, indent=2)
+        except Exception:
+            pass
+
+    @classmethod
+    def _load_session_cache(cls, file_path: Path) -> Optional[EditSession]:
+        try:
+            cache_file = cls._get_session_cache_path(file_path)
+            if cache_file.exists():
+                with open(cache_file, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                return EditSession(**data)
+        except Exception:
+            pass
+        return None
+
+    @classmethod
+    def accept_change_payload(cls, file_path: Union[str, Path], change_id: str) -> Dict[str, Any]:
+        path = resolve_safe_path(file_path)
+        agent = DocumentAgent(path)
+        session = cls._load_session_cache(path)
+        if session:
+            agent.version_manager.register_session(session)
+            agent.active_session = session
+
+        success = agent.accept_change(change_id)
+        if session and success:
+            cls._save_session_cache(path, session)
+
+        return {"success": success, "change_id": change_id, "status": "ACCEPTED" if success else "NOT_FOUND"}
+
+    @classmethod
+    def reject_change_payload(cls, file_path: Union[str, Path], change_id: str) -> Dict[str, Any]:
+        path = resolve_safe_path(file_path)
+        agent = DocumentAgent(path)
+        session = cls._load_session_cache(path)
+        if session:
+            agent.version_manager.register_session(session)
+            agent.active_session = session
+
+        success = agent.reject_change(change_id)
+        if session and success:
+            cls._save_session_cache(path, session)
+
+        return {"success": success, "change_id": change_id, "status": "REJECTED" if success else "NOT_FOUND"}
+
+    @classmethod
+    def commit_session_payload(
+        cls,
+        file_path: Union[str, Path],
+        session_id: str,
+        output_path: Optional[Union[str, Path]] = None,
+    ) -> Dict[str, Any]:
+        path = resolve_safe_path(file_path)
+        agent = DocumentAgent(path)
+        session = cls._load_session_cache(path)
+        if session:
+            agent.version_manager.register_session(session)
+            agent.active_session = session
+
+        out_p, info = agent.commit_session(session_id=session_id, output_path=output_path)
+        return {"success": True, "file_path": out_p, "commit_info": info}
+
+    @classmethod
+    def get_version_history_payload(cls, file_path: Union[str, Path]) -> Dict[str, Any]:
+        path = resolve_safe_path(file_path)
+        agent = DocumentAgent(path)
+        history = agent.get_version_history()
+        return {"success": True, "versions": history, "current_version": agent.canonical_doc.version}
+
+

@@ -69,6 +69,20 @@ from docx_agent.utils.paths import resolve_safe_path
 from docx_agent.utils.unicode import normalize_unicode, normalize_comparison
 
 
+from docx_agent.changes.model import (
+    ChangeObject,
+    ChangeType,
+    ChangeStatus,
+    ChangeLocation,
+    EditSession,
+    generate_change_id,
+    generate_session_id,
+)
+from docx_agent.changes.diff import SemanticDiffEngine
+from docx_agent.changes.versioning import VersionManager, VersionSnapshot
+from docx_agent.changes.revisions import NativeWordRevisionExporter
+
+
 class DocumentAgent:
     """
     Universal Agent-Native DOCX manipulation engine & Workspace collaborator.
@@ -101,9 +115,11 @@ class DocumentAgent:
         self.fields = FieldOperations(self.model)
         self.academic = AcademicOperations(self.model)
 
-        # V2 Workspace Engines
+        # V2 Workspace Engines & AI Change Tracking
         self.tx_manager = AgentTransactionManager(self.canonical_doc)
         self.research = ResearchAssistant()
+        self.version_manager = VersionManager(self.canonical_doc)
+        self.active_session: Optional[EditSession] = None
 
     # ---------------------------------------------------------
     # INSPECTION & DISCOVERY
@@ -442,3 +458,199 @@ class DocumentAgent:
         """Exports Canonical Document Model to DOCX format."""
         out_p = DocxExporter.export_docx(self.canonical_doc, output_path)
         return str(out_p)
+
+    # ---------------------------------------------------------
+    # AI EDIT SESSIONS & SEMANTIC CHANGE TRACKING
+    # ---------------------------------------------------------
+    def start_edit_session(
+        self,
+        task_description: str,
+        agent_id: str = "Antigravity-Agent",
+    ) -> EditSession:
+        """Starts a new staged AI Edit Session without modifying the committed document."""
+        session = EditSession(
+            task_description=task_description,
+            agent_id=agent_id,
+            document_id=self.canonical_doc.id,
+            base_version=self.canonical_doc.version,
+            target_version=self.canonical_doc.version + 1,
+        )
+        self.version_manager.register_session(session)
+        self.active_session = session
+        return session
+
+    def propose_changes(
+        self,
+        modified_doc: Optional[Union[DocumentNode, Dict[str, Any]]] = None,
+        session_id: Optional[str] = None,
+        task_description: Optional[str] = None,
+        agent_id: str = "Antigravity-Agent",
+        reason: str = "Cải thiện và chuẩn hóa văn phong khoa học",
+        confidence: float = 0.95,
+        evidence: Optional[str] = None,
+        modified_doc_data: Optional[Dict[str, Any]] = None,
+    ) -> EditSession:
+        """
+        Computes semantic diff between current document and modified candidate,
+        creating an auditable EditSession with discrete ChangeObjects.
+        """
+        if modified_doc is None and modified_doc_data is not None:
+            modified_doc = DocumentNode(**modified_doc_data)
+        elif isinstance(modified_doc, dict):
+            modified_doc = DocumentNode(**modified_doc)
+        elif modified_doc is None:
+            raise ValueError("Cần cung cấp modified_doc hoặc modified_doc_data.")
+
+        session = None
+        if session_id:
+            session = self.version_manager.sessions.get(session_id)
+        if session is None:
+            session = self.start_edit_session(
+                task_description=task_description or "Đề xuất thay đổi nội dung từ AI",
+                agent_id=agent_id,
+            )
+
+        changes = SemanticDiffEngine.compute_diff(
+            doc_before=self.canonical_doc,
+            doc_after=modified_doc,
+            agent_id=agent_id,
+            default_reason=reason,
+            confidence=confidence,
+            evidence=evidence,
+        )
+
+        for chg in changes:
+            session.add_change(chg)
+            self.version_manager.all_changes[chg.change_id] = chg
+
+        self.active_session = session
+        return session
+
+    def get_session(self, session_id: str) -> Optional[EditSession]:
+        """Retrieves an existing edit session by ID."""
+        return self.version_manager.sessions.get(session_id)
+
+    def accept_change(self, change_id: str) -> bool:
+        """Accepts a proposed change object."""
+        chg = self.version_manager.all_changes.get(change_id)
+        if chg:
+            chg.accept()
+            # Apply to in-memory working model if applicable
+            blk = self.canonical_doc.find_block(chg.target_element)
+            if blk and chg.after_content is not None:
+                if hasattr(blk, "runs") and isinstance(chg.after_content, str):
+                    from docx_agent.canonical.model import RunNode
+                    blk.runs = [RunNode(text=chg.after_content)]
+                    blk.dirty = True
+            return True
+        return False
+
+    def reject_change(self, change_id: str) -> bool:
+        """Rejects a proposed change object."""
+        chg = self.version_manager.all_changes.get(change_id)
+        if chg:
+            chg.reject()
+            return True
+        return False
+
+    def accept_all_changes(self, session_id: Optional[str] = None) -> int:
+        """Accepts all proposed changes in the active or specified session."""
+        target_session = self.version_manager.sessions.get(session_id) if session_id else self.active_session
+        if not target_session:
+            return 0
+        count = 0
+        for chg in target_session.changes:
+            if chg.status == ChangeStatus.PROPOSED:
+                self.accept_change(chg.change_id)
+                count += 1
+        return count
+
+    def reject_all_changes(self, session_id: Optional[str] = None) -> int:
+        """Rejects all proposed changes in the active or specified session."""
+        target_session = self.version_manager.sessions.get(session_id) if session_id else self.active_session
+        if not target_session:
+            return 0
+        return target_session.reject_all()
+
+    def commit_session(
+        self,
+        session_id: Optional[str] = None,
+        author: str = "User & AI Agent",
+        output_path: Optional[Union[str, Path]] = None,
+    ) -> Tuple[str, Dict[str, Any]]:
+        """
+        Commits reviewed changes into a new immutable Version in history and exports to DOCX.
+        """
+        target_session = self.version_manager.sessions.get(session_id) if session_id else self.active_session
+        if not target_session:
+            raise ValueError("Không có phiên chỉnh sửa (Edit Session) nào đang mở để commit.")
+
+        snapshot = self.version_manager.commit_session(
+            session_id=target_session.session_id,
+            current_doc=self.canonical_doc,
+            author=author,
+        )
+
+        out_file = output_path or self.model.file_path or "output_committed.docx"
+        exported_path = DocxExporter.export_docx(self.canonical_doc, out_file)
+        self.model = DocumentModel(exported_path)
+
+        return str(exported_path), snapshot.model_dump()
+
+    def revert_change(self, change_id: str) -> bool:
+        """Reverts an already committed change, restoring the previous element content."""
+        doc_reverted, success = self.version_manager.revert_change(change_id, self.canonical_doc)
+        if success:
+            self.canonical_doc = doc_reverted
+        return success
+
+    def revert_to_version(self, version_num: int, output_path: Optional[Union[str, Path]] = None) -> str:
+        """Restores the entire document to a previous Version state in history."""
+        doc_restored = self.version_manager.restore_version(version_num)
+        self.canonical_doc = doc_restored
+        out_file = output_path or self.model.file_path or f"output_v{version_num}.docx"
+        exported_path = DocxExporter.export_docx(self.canonical_doc, out_file)
+        self.model = DocumentModel(exported_path)
+        return str(exported_path)
+
+    def undo_change(self) -> Optional[ChangeObject]:
+        """Undoes the most recent accepted change at ChangeObject granularity."""
+        doc_updated, chg = self.version_manager.undo_last_change(self.canonical_doc)
+        self.canonical_doc = doc_updated
+        return chg
+
+    def redo_change(self) -> Optional[ChangeObject]:
+        """Redoes the most recently undone change at ChangeObject granularity."""
+        doc_updated, chg = self.version_manager.redo_last_change(self.canonical_doc)
+        self.canonical_doc = doc_updated
+        return chg
+
+    def get_version_history(self) -> List[Dict[str, Any]]:
+        """Returns the full chronological version history."""
+        return self.version_manager.list_history()
+
+    def compare_versions(self, v1: int, v2: int) -> List[ChangeObject]:
+        """Computes semantic diff between any two historical versions."""
+        s1 = self.version_manager.get_version(v1)
+        s2 = self.version_manager.get_version(v2)
+        if not s1 or not s2:
+            raise ValueError(f"Không tìm thấy phiên bản so sánh ({v1} hoặc {v2}).")
+        return SemanticDiffEngine.compute_diff(s1.document_snapshot, s2.document_snapshot)
+
+    def export_with_track_changes(
+        self,
+        output_path: Union[str, Path],
+        session_id: Optional[str] = None,
+    ) -> str:
+        """
+        Exports the document to DOCX with native Word revision markup (<w:ins>, <w:del>).
+        """
+        target_session = self.version_manager.sessions.get(session_id) if session_id else self.active_session
+        changes = target_session.changes if target_session else []
+
+        doc_docx = docx.Document(str(self.model.file_path) if self.model.file_path else None)
+        NativeWordRevisionExporter.apply_word_revisions(doc_docx, changes)
+        target_p = resolve_safe_path(output_path)
+        doc_docx.save(str(target_p))
+        return str(target_p)
+

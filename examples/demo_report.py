@@ -13,10 +13,6 @@ def run_demo():
     output_docx = examples_dir / "demo_report.docx"
     chart_img = examples_dir / "demo_chart.png"
 
-    # Create dummy chart image
-    img = Image.new("RGB", (300, 150), color=(50, 120, 180))
-    img.save(str(chart_img))
-
     print("1. Creating fresh document...")
     agent = DocumentAgent()
 
@@ -24,7 +20,7 @@ def run_demo():
     agent.apply_preset("academic-vn")
 
     print("3. Adding title and headings...")
-    agent.append("BÁO CÁO NGHIÊN CỨU HỆ THỐNG AGENT THÔNG MINH", style="Title")
+    t_id = agent.append("BÁO CÁO NGHIÊN CỨU HỆ THỐNG AGENT THÔNG MINH", style="Title")
     agent.append("Đề tài: Tối ưu hóa xử lý văn bản tự động với AI", style="Subtitle")
 
     agent.append("1. Giới thiệu tổng quan", style="Heading 1")
@@ -57,15 +53,15 @@ def run_demo():
     agent.edit_cell(f"{tid}_r04_c02", text="99.9%", bold=True, bg_color_hex="D4EDDA")
 
     print("5. Inserting chart image with caption...")
-    agent.insert_image(
-        image_path=str(chart_img),
-        width_cm=10.0,
-        alignment="center",
-        caption="Hình 1: So sánh hiệu năng giữa các phương pháp thao tác DOCX.",
-    )
+    if chart_img.exists():
+        agent.insert_image(
+            image_path=str(chart_img),
+            width_cm=13.0,
+            alignment="center",
+            caption="Hình 1: So sánh hiệu năng giữa các phương pháp thao tác DOCX.",
+        )
 
-    print("6. Inserting Table of Contents and dynamic page numbering...")
-    agent.insert_toc(title="MỤC LỤC BÁO CÁO")
+    print("6. Setting page numbering...")
     agent.set_page_numbers(format_str="Trang {PAGE} / {NUMPAGES}", alignment="center")
 
     print("7. Saving document transactionally with independent verification...")

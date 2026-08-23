@@ -140,17 +140,26 @@ class DocxImporter:
                 continue
 
             if tag.endswith("p"):
-                p = docx.text.paragraph.Paragraph(child, doc)
-                style_name = p.style.name if p.style else "Normal"
+                p_pr = child.find(f"{{{ns['w']}}}pPr")
+                style_name = "Normal"
+                if p_pr is not None:
+                    p_style = p_pr.find(f"{{{ns['w']}}}pStyle")
+                    if p_style is not None:
+                        s_val = p_style.attrib.get(f"{{{ns['w']}}}val")
+                        if s_val:
+                            if s_val in style_resolver.styles:
+                                style_name = style_resolver.styles[s_val].name
+                            else:
+                                style_name = s_val
 
                 # Check paragraph-level section break (pPr/sectPr)
-                p_sect_pr = child.find(f".//{{{ns['w']}}}sectPr")
+                p_sect_pr = p_pr.find(f"{{{ns['w']}}}sectPr") if p_pr is not None else None
                 
                 # Check numbering (w:numPr)
                 num_id = None
                 ilvl = 0
                 resolved_num_label = None
-                num_pr = child.find(f".//{{{ns['w']}}}numPr")
+                num_pr = p_pr.find(f"{{{ns['w']}}}numPr") if p_pr is not None else None
                 if num_pr is not None:
                     num_id_elem = num_pr.find(f"{{{ns['w']}}}numId")
                     if num_id_elem is not None:
@@ -165,20 +174,42 @@ class DocxImporter:
                     if num_id is not None:
                         resolved_num_label = numbering_resolver.get_numbering_label(num_id, ilvl)
 
-                # Check paragraph properties
+                # Check paragraph properties from XML
                 align_str = None
-                if p.alignment is not None:
-                    align_raw = getattr(p.alignment, "name", str(p.alignment))
-                    align_str = align_raw.split()[0].split(".")[-1].lower()
-                    if "(" in align_str:
-                        align_str = align_str.split("(")[0].strip()
-                ls = p.paragraph_format.line_spacing or None
-                sb = p.paragraph_format.space_before.pt if p.paragraph_format.space_before else None
-                sa = p.paragraph_format.space_after.pt if p.paragraph_format.space_after else None
-                fl = p.paragraph_format.first_line_indent.cm if p.paragraph_format.first_line_indent else None
+                ls = None
+                sb = None
+                sa = None
+                fl = None
+                keep_next = False
+                page_break_before = False
 
-                keep_next = child.find(f".//{{{ns['w']}}}keepNext") is not None
-                page_break_before = child.find(f".//{{{ns['w']}}}pageBreakBefore") is not None
+                if p_pr is not None:
+                    jc = p_pr.find(f"{{{ns['w']}}}jc")
+                    if jc is not None:
+                        val = jc.attrib.get(f"{{{ns['w']}}}val")
+                        if val in ("left", "center", "right", "both", "justify"):
+                            align_str = "justify" if val == "both" else val
+                    
+                    sp = p_pr.find(f"{{{ns['w']}}}spacing")
+                    if sp is not None:
+                        before = sp.attrib.get(f"{{{ns['w']}}}before")
+                        if before and before.isdigit():
+                            sb = float(before) / 20.0
+                        after = sp.attrib.get(f"{{{ns['w']}}}after")
+                        if after and after.isdigit():
+                            sa = float(after) / 20.0
+                        line = sp.attrib.get(f"{{{ns['w']}}}line")
+                        if line and line.isdigit():
+                            ls = round(float(line) / 240.0, 2)
+
+                    ind = p_pr.find(f"{{{ns['w']}}}ind")
+                    if ind is not None:
+                        first_line = ind.attrib.get(f"{{{ns['w']}}}firstLine")
+                        if first_line and first_line.isdigit():
+                            fl = round(float(first_line) / 567.0, 2)
+                    
+                    keep_next = p_pr.find(f"{{{ns['w']}}}keepNext") is not None
+                    page_break_before = p_pr.find(f"{{{ns['w']}}}pageBreakBefore") is not None
 
                 # Resolve effective paragraph formatting
                 direct_p_props = {
@@ -192,18 +223,51 @@ class DocxImporter:
                 }
                 eff_para = style_resolver.resolve_paragraph(style_name, direct_p_props)
 
-                # Ingest Runs
+                # Ingest Runs directly from XML
                 runs_nodes = []
                 image_blocks_in_p = []
 
-                for r_idx, r in enumerate(p.runs):
-                    font_size = r.font.size.pt if r.font and r.font.size else None
-                    font_name = r.font.name if r.font else None
-                    color_hex = str(r.font.color.rgb) if r.font and r.font.color and r.font.color.rgb else None
-                    is_page_brk = bool(r._r.find(f".//{{{ns['w']}}}br[@{{{ns['w']}}}type='page']") is not None)
+                r_elems = child.findall(f"{{{ns['w']}}}r")
+                for r_idx, r_elem in enumerate(r_elems):
+                    r_pr = r_elem.find(f"{{{ns['w']}}}rPr")
+                    font_size = None
+                    font_name = None
+                    bold = None
+                    italic = None
+                    underline = None
+                    color_hex = None
+
+                    if r_pr is not None:
+                        sz = r_pr.find(f"{{{ns['w']}}}sz")
+                        if sz is not None:
+                            val = sz.attrib.get(f"{{{ns['w']}}}val")
+                            if val and val.isdigit():
+                                font_size = float(val) / 2.0
+                        rf = r_pr.find(f"{{{ns['w']}}}rFonts")
+                        if rf is not None:
+                            font_name = rf.attrib.get(f"{{{ns['w']}}}ascii") or rf.attrib.get(f"{{{ns['w']}}}hAnsi")
+                        b = r_pr.find(f"{{{ns['w']}}}b")
+                        if b is not None:
+                            val = b.attrib.get(f"{{{ns['w']}}}val", "true")
+                            bold = val not in ("false", "0", "off")
+                        i = r_pr.find(f"{{{ns['w']}}}i")
+                        if i is not None:
+                            val = i.attrib.get(f"{{{ns['w']}}}val", "true")
+                            italic = val not in ("false", "0", "off")
+                        u = r_pr.find(f"{{{ns['w']}}}u")
+                        if u is not None:
+                            val = u.attrib.get(f"{{{ns['w']}}}val", "single")
+                            underline = val != "none"
+                        col = r_pr.find(f"{{{ns['w']}}}color")
+                        if col is not None:
+                            val = col.attrib.get(f"{{{ns['w']}}}val")
+                            if val and val != "auto":
+                                color_hex = val.upper()
+
+                    is_page_brk = bool(r_elem.find(f".//{{{ns['w']}}}br[@{{{ns['w']}}}type='page']") is not None)
 
                     # Extract DrawingML image if present inside run
-                    drawing = r._r.find(f".//{{{ns['w']}}}drawing")
+                    drawing = r_elem.find(f".//{{{ns['w']}}}drawing")
                     if drawing is not None:
                         extent = drawing.find(f".//{{{ns['wp']}}}extent")
                         w_cm = 10.0
@@ -233,16 +297,19 @@ class DocxImporter:
                     direct_r_props = {
                         "font_name": font_name,
                         "font_size_pt": font_size,
-                        "bold": r.bold,
-                        "italic": r.italic,
-                        "underline": bool(r.underline) if r.underline is not None else None,
+                        "bold": bold,
+                        "italic": italic,
+                        "underline": underline,
                         "color_rgb": color_hex,
                     }
                     eff_run = style_resolver.resolve_run(eff_para, direct_r_props)
 
+                    t_elems = r_elem.findall(f"{{{ns['w']}}}t")
+                    r_text = "".join(t.text or "" for t in t_elems)
+
                     run_node = RunNode(
                         id=f"r_{current_sec_idx+1:02d}_{blk_idx+1:04d}_{r_idx+1:03d}",
-                        text=normalize_unicode(r.text),
+                        text=normalize_unicode(r_text),
                         font_name=eff_run.font_name,
                         font_size_pt=eff_run.font_size_pt,
                         bold=eff_run.bold,
@@ -255,12 +322,55 @@ class DocxImporter:
                     )
                     runs_nodes.append(run_node)
 
-                # Determine Block Type & Instantiate
-                if style_name.startswith("Heading"):
-                    try:
-                        lvl = int("".join(filter(str.isdigit, style_name)) or 1)
-                    except ValueError:
-                        lvl = 1
+                # Determine Block Type & Instantiate (High-Performance Heading & List Resolution)
+                is_heading = False
+                lvl = 1
+                if style_name:
+                    s_lower = style_name.lower().strip()
+                    if s_lower in ("title", "tựa đề", "subtitle", "phụ đề", "toc heading", "tiêu đề mục lục"):
+                        is_heading = False
+                    elif s_lower.startswith("heading") or s_lower.startswith("tiêu đề") or s_lower.startswith("tieu de"):
+                        is_heading = True
+                        digits = "".join(filter(str.isdigit, style_name))
+                        if digits:
+                            try:
+                                lvl = int(digits)
+                            except ValueError:
+                                lvl = 1
+                        else:
+                            lvl = 1
+                    if not is_heading and p_pr is not None and s_lower not in ("title", "tựa đề", "subtitle", "phụ đề"):
+                        outline_lvl = p_pr.find(f"{{{ns['w']}}}outlineLvl")
+                        if outline_lvl is not None:
+                            val = outline_lvl.attrib.get(f"{{{ns['w']}}}val")
+                            if val is not None and val.isdigit() and 0 <= int(val) <= 8:
+                                is_heading = True
+                                lvl = int(val) + 1
+
+                # Heuristic: Check if unstyled line is bold/emphasized and formatted like a heading/chapter
+                if not is_heading and runs_nodes and len(runs_nodes) > 0:
+                    first_run = runs_nodes[0]
+                    p_text = "".join(r.text for r in runs_nodes).strip()
+                    is_all_bold = all(r.bold for r in runs_nodes if r.text and r.text.strip())
+                    if (is_all_bold or first_run.bold) and len(p_text) <= 200:
+                        import re
+                        if re.match(r"^(MỤC\s+LỤC|TABLE\s+OF\s+CONTENTS|TOC)", p_text, re.IGNORECASE):
+                            is_heading = False
+                        elif re.match(r"^(CHƯƠNG|PHẦN|BÀI\s+HỌC|PHỤ\s+LỤC)\s+[0-9IVXLCDM]+", p_text, re.IGNORECASE):
+                            is_heading = True
+                            lvl = 1
+                        elif re.match(r"^(MỤC|BÀI\s+TẬP|CÂU\s+HỎI|CÂU|BÀI)\s+\d+", p_text, re.IGNORECASE):
+                            is_heading = True
+                            lvl = 2
+                        elif re.match(r"^[0-9IVXLCDM]+\.\s+[A-ZÀ-Ỹ]", p_text):
+                            is_heading = True
+                            lvl = 1
+                        elif re.match(r"^\d+\.\d+(\.\d+)?\s+[A-ZÀ-Ỹ]", p_text):
+                            dots = p_text.split()[0].count(".")
+                            is_heading = True
+                            lvl = min(dots + 1, 4)
+
+                if is_heading:
                     target_sec.blocks.append(
                         HeadingBlock(
                             id=f"h_{current_sec_idx+1:02d}_{blk_idx+1:04d}",

@@ -58,4 +58,5 @@ venv.bak/
 *.bak
 *.bak.*
 .docx_agent_workspace/
+.agent/
 examples/output_*.docx

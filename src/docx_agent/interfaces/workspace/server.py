@@ -29,20 +29,34 @@ class WorkspaceServer:
                     self.send_response(200)
                     self.send_header("Content-type", "text/html; charset=utf-8")
                     self.end_headers()
-                    with open(html_file, "rb") as f:
-                        self.wfile.write(f.read())
+                    with open(html_file, "r", encoding="utf-8") as f:
+                        html_text = f.read()
+                    jszip_f = WORKSPACE_DIR / "jszip.min.js"
+                    docx_f = WORKSPACE_DIR / "docx-preview.min.js"
+                    if jszip_f.exists():
+                        html_text = html_text.replace('<script src="https://unpkg.com/jszip/dist/jszip.min.js"></script>', f'<script>{jszip_f.read_text(encoding="utf-8")}</script>')
+                    if docx_f.exists():
+                        html_text = html_text.replace('<script src="https://cdn.jsdelivr.net/npm/docx-preview@0.4.0/dist/docx-preview.min.js"></script>', f'<script>{docx_f.read_text(encoding="utf-8")}</script>')
+                    self.wfile.write(html_text.encode("utf-8"))
                 elif self.path == "/api/document":
                     self.send_response(200)
                     self.send_header("Content-type", "application/json; charset=utf-8")
                     self.end_headers()
                     try:
                         if file_path and Path(file_path).exists():
+                            import base64
                             doc_data = WorkspaceBridge.load_document_payload(file_path)
+                            with open(file_path, "rb") as bf:
+                                docx_b64 = base64.b64encode(bf.read()).decode("ascii")
+                            response_data = {
+                                "payload": doc_data,
+                                "docxBase64": docx_b64
+                            }
                         else:
-                            doc_data = {"error": "Không có tệp tài liệu được chỉ định."}
+                            response_data = {"error": "Không có tệp tài liệu được chỉ định."}
                     except Exception as e:
-                        doc_data = {"error": str(e)}
-                    self.wfile.write(json.dumps(doc_data, ensure_ascii=False).encode("utf-8"))
+                        response_data = {"error": str(e)}
+                    self.wfile.write(json.dumps(response_data, ensure_ascii=False).encode("utf-8"))
                 else:
                     super().do_GET()
 
@@ -69,8 +83,8 @@ class WorkspaceServer:
                     self.send_response(404)
                     self.end_headers()
 
-        socketserver.TCPServer.allow_reuse_address = True
-        with socketserver.TCPServer(("", port), Handler) as httpd:
+        socketserver.ThreadingTCPServer.allow_reuse_address = True
+        with socketserver.ThreadingTCPServer(("", port), Handler) as httpd:
             url = f"http://localhost:{port}"
             print(f"Docx-Agent V2.1 Workspace running at: {url}")
             if open_browser:

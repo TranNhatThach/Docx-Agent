@@ -573,6 +573,125 @@ def cmd_workspace_selection(
         sys.exit(1)
 
 
+@app.command("session-propose")
+def cmd_session_propose(
+    file_path: str = typer.Argument(..., help="Path to .docx file"),
+    data_file: str = typer.Argument(..., help="Path to JSON file containing modified document data"),
+    task: str = typer.Option("AI đề xuất chỉnh sửa văn bản", "--task", help="Task description"),
+    agent_id: str = typer.Option("Antigravity-Agent", "--agent", help="Agent identifier"),
+    reason: str = typer.Option("Tối ưu hóa và chuẩn hóa nội dung", "--reason", help="Explanation for changes"),
+    confidence: float = typer.Option(0.95, "--confidence", help="Confidence score (0.0 to 1.0)"),
+    evidence: Optional[str] = typer.Option(None, "--evidence", help="Evidence snippet"),
+    as_json: bool = typer.Option(True, "--json", help="Output machine-readable JSON"),
+):
+    """Generates an AI Edit Session with discrete semantic ChangeObjects."""
+    try:
+        from docx_agent.interfaces.workspace.bridge import WorkspaceBridge
+        with open(data_file, "r", encoding="utf-8") as f:
+            mod_data = json.load(f)
+        res = WorkspaceBridge.propose_edit_session_payload(
+            file_path=file_path,
+            task_description=task,
+            modified_doc_data=mod_data,
+            agent_id=agent_id,
+            reason=reason,
+            confidence=confidence,
+            evidence=evidence,
+        )
+        output_result(res, as_json=as_json)
+    except Exception as e:
+        err_console.print(f"[bold red]Error:[/bold red] {str(e)}")
+        sys.exit(1)
+
+
+@app.command("session-accept")
+def cmd_session_accept(
+    file_path: str = typer.Argument(..., help="Path to .docx file"),
+    change_id: str = typer.Argument(..., help="Change ID to accept (e.g. CHG-001)"),
+    as_json: bool = typer.Option(True, "--json", help="Output machine-readable JSON"),
+):
+    """Accepts a proposed change object."""
+    try:
+        from docx_agent.interfaces.workspace.bridge import WorkspaceBridge
+        res = WorkspaceBridge.accept_change_payload(file_path, change_id)
+        output_result(res, as_json=as_json)
+    except Exception as e:
+        err_console.print(f"[bold red]Error:[/bold red] {str(e)}")
+        sys.exit(1)
+
+
+@app.command("session-reject")
+def cmd_session_reject(
+    file_path: str = typer.Argument(..., help="Path to .docx file"),
+    change_id: str = typer.Argument(..., help="Change ID to reject (e.g. CHG-001)"),
+    as_json: bool = typer.Option(True, "--json", help="Output machine-readable JSON"),
+):
+    """Rejects a proposed change object."""
+    try:
+        from docx_agent.interfaces.workspace.bridge import WorkspaceBridge
+        res = WorkspaceBridge.reject_change_payload(file_path, change_id)
+        output_result(res, as_json=as_json)
+    except Exception as e:
+        err_console.print(f"[bold red]Error:[/bold red] {str(e)}")
+        sys.exit(1)
+
+
+@app.command("session-commit")
+def cmd_session_commit(
+    file_path: str = typer.Argument(..., help="Path to .docx file"),
+    session_id: str = typer.Argument(..., help="Edit Session ID (e.g. SES-001)"),
+    output: Optional[str] = typer.Option(None, "--output", help="Output DOCX path"),
+    as_json: bool = typer.Option(True, "--json", help="Output machine-readable JSON"),
+):
+    """Commits an Edit Session into a new document version."""
+    try:
+        from docx_agent.interfaces.workspace.bridge import WorkspaceBridge
+        res = WorkspaceBridge.commit_session_payload(file_path, session_id, output)
+        output_result(res, as_json=as_json)
+    except Exception as e:
+        err_console.print(f"[bold red]Error:[/bold red] {str(e)}")
+        sys.exit(1)
+
+
+@app.command("version-history")
+def cmd_version_history(
+    file_path: str = typer.Argument(..., help="Path to .docx file"),
+    as_json: bool = typer.Option(True, "--json", help="Output machine-readable JSON"),
+):
+    """Retrieves full immutable version history of the document."""
+    try:
+        from docx_agent.interfaces.workspace.bridge import WorkspaceBridge
+        res = WorkspaceBridge.get_version_history_payload(file_path)
+        output_result(res, as_json=as_json)
+    except Exception as e:
+        err_console.print(f"[bold red]Error:[/bold red] {str(e)}")
+        sys.exit(1)
+
+
+@app.command("version-compare")
+def cmd_version_compare(
+    file_path: str = typer.Argument(..., help="Path to .docx file"),
+    v1: int = typer.Argument(..., help="Base version number"),
+    v2: int = typer.Argument(..., help="Target version number"),
+    as_json: bool = typer.Option(True, "--json", help="Output machine-readable JSON"),
+):
+    """Computes semantic diff between two historical document versions."""
+    try:
+        agent = DocumentAgent(file_path)
+        changes = agent.compare_versions(v1, v2)
+        res = {
+            "success": True,
+            "v1": v1,
+            "v2": v2,
+            "changes_count": len(changes),
+            "changes": [c.model_dump() for c in changes],
+        }
+        output_result(res, as_json=as_json)
+    except Exception as e:
+        err_console.print(f"[bold red]Error:[/bold red] {str(e)}")
+        sys.exit(1)
+
+
 @app.command("version")
 def cmd_version(
     as_json: bool = typer.Option(False, "--json", help="Output machine-readable JSON"),
@@ -610,6 +729,8 @@ def cmd_health(
             "visual_verification": True,
             "mcp_server": True,
             "academic_presets": True,
+            "semantic_diff_and_change_tracking": True,
+            "version_history": True,
         }
     }
     output_result(health_data, as_json=as_json)
@@ -617,5 +738,6 @@ def cmd_health(
 
 if __name__ == "__main__":
     app()
+
 
 

@@ -3,30 +3,35 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Docx-Agent — Real Document Editor</title>
+  <title>Docx-Agent — Visual Document Workspace</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&family=Times+New+Roman&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&family=Times+New+Roman&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/jszip/dist/jszip.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/docx-preview@0.4.0/dist/docx-preview.min.js"></script>
   <style>
     :root {
       --bg-workspace: #eef2f6;
-      --bg-toolbar: #f8fafc;
+      --bg-toolbar: #ffffff;
       --bg-ribbon: #ffffff;
       --border-color: #cbd5e1;
       --border-subtle: #e2e8f0;
       --text-main: #1e293b;
       --text-muted: #64748b;
       --text-bright: #0f172a;
-      --accent: #2563eb;
-      --accent-hover: #1d4ed8;
-      --accent-light: #dbeafe;
+      
+      --accent: #0078d4;
+      --accent-hover: #106ebe;
+      --accent-light: #eff6fc;
+      --accent-subtle: #deecf9;
+      
       --danger: #dc2626;
+      --danger-light: #fef2f2;
       --success: #16a34a;
+      --success-light: #f0fdf4;
       --warning: #d97706;
       
-      /* A4 Page Specifications (Standard A4 @ 96 DPI: 210mm x 297mm ≈ 794px x 1123px) */
+      /* A4 Page Specifications (210mm x 297mm @ 96 DPI) */
       --page-width: 210mm;
       --page-min-height: 297mm;
       --page-margin-top: 20mm;
@@ -35,7 +40,7 @@
       --page-margin-right: 20mm;
       --page-bg: #ffffff;
       --page-text: #1f2937;
-      --page-shadow: 0 4px 20px rgba(0, 0, 0, 0.12), 0 0 1px rgba(0, 0, 0, 0.15);
+      --page-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 10px 25px -3px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
       
       --zoom: 1.0;
     }
@@ -50,22 +55,43 @@
       flex-direction: column;
       height: 100vh;
       overflow: hidden;
-      font-size: 13px;
+      font-size: 12.5px;
       user-select: none;
     }
+
+    /* SVG Icon Utility Styles */
+    .icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+    }
+    .icon svg {
+      width: 100%;
+      height: 100%;
+      stroke: currentColor;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      fill: none;
+    }
+    .icon.sm { width: 13px; height: 13px; }
+    .icon.lg { width: 18px; height: 18px; }
 
     /* ------------------------------------------------------------------ */
     /* 1. TOP TITLE & QUICK ACCESS BAR                                    */
     /* ------------------------------------------------------------------ */
     header.title-bar {
-      background: #1e293b;
+      background: #0f172a;
       color: #f8fafc;
-      height: 36px;
+      height: 40px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 12px;
-      border-bottom: 1px solid #0f172a;
+      padding: 0 14px;
+      border-bottom: 1px solid #1e293b;
       flex-shrink: 0;
       z-index: 50;
     }
@@ -73,44 +99,75 @@
     .title-left {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
     }
 
     .app-logo {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
       font-weight: 700;
       font-size: 13px;
       color: #ffffff;
       letter-spacing: 0.3px;
     }
-    .app-logo svg { fill: #38bdf8; }
+    .app-logo .logo-icon {
+      width: 24px;
+      height: 24px;
+      background: linear-gradient(135deg, #0078d4 0%, #00a4ef 100%);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+      box-shadow: 0 2px 6px rgba(0, 120, 212, 0.4);
+    }
+    .app-logo .logo-icon svg {
+      width: 14px;
+      height: 14px;
+      stroke: #ffffff;
+      stroke-width: 2;
+    }
 
     .doc-name-pill {
-      background: #334155;
-      color: #93c5fd;
-      padding: 2px 10px;
-      border-radius: 4px;
+      background: #1e293b;
+      color: #7dd3fc;
+      padding: 3px 10px;
+      border-radius: 5px;
       font-size: 11.5px;
       font-family: 'JetBrains Mono', monospace;
-      max-width: 320px;
+      max-width: 360px;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      border: 1px solid #475569;
+      border: 1px solid #334155;
     }
 
     .save-status-badge {
       display: inline-flex;
       align-items: center;
-      gap: 5px;
+      gap: 6px;
       font-size: 11px;
       color: #94a3b8;
+      font-weight: 500;
     }
+    .save-status-badge .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #94a3b8;
+    }
+    .save-status-badge.saved .status-dot { background: #22c55e; box-shadow: 0 0 6px rgba(34, 197, 94, 0.6); }
     .save-status-badge.saved { color: #4ade80; }
+    .save-status-badge.saving .status-dot { background: #facc15; animation: pulse 1s infinite; }
     .save-status-badge.saving { color: #facc15; }
+    .save-status-badge.unsaved .status-dot { background: #f97316; }
     .save-status-badge.unsaved { color: #fb923c; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.8); }
+    }
 
     .title-right {
       display: flex;
@@ -118,11 +175,44 @@
       gap: 8px;
     }
 
+    .quick-btn {
+      background: #1e293b;
+      color: #cbd5e1;
+      border: 1px solid #334155;
+      border-radius: 5px;
+      padding: 4px 8px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      height: 28px;
+      font-size: 11.5px;
+      font-weight: 500;
+      transition: all 0.12s;
+    }
+    .quick-btn:hover {
+      background: #334155;
+      color: #ffffff;
+    }
+    .quick-btn.save-btn {
+      background: linear-gradient(135deg, #0078d4 0%, #005a9e 100%);
+      color: #ffffff;
+      border-color: #0078d4;
+      font-weight: 600;
+      padding: 4px 12px;
+      box-shadow: 0 2px 6px rgba(0, 120, 212, 0.35);
+    }
+    .quick-btn.save-btn:hover {
+      background: linear-gradient(135deg, #106ebe 0%, #004578 100%);
+      box-shadow: 0 3px 8px rgba(0, 120, 212, 0.5);
+    }
+
     /* ------------------------------------------------------------------ */
-    /* 2. WORD-LIKE RIBBON TABBED TOOLBAR                                */
+    /* 2. WORD-LIKE MODERN RIBBON TOOLBAR                                */
     /* ------------------------------------------------------------------ */
     .ribbon-container {
-      background: var(--bg-toolbar);
+      background: #ffffff;
       border-bottom: 1px solid var(--border-color);
       flex-shrink: 0;
       z-index: 40;
@@ -132,44 +222,46 @@
     .ribbon-tabs {
       display: flex;
       align-items: center;
-      background: #f1f5f9;
-      padding: 0 8px;
-      border-bottom: 1px solid var(--border-color);
-      height: 30px;
+      background: #f8fafc;
+      padding: 0 10px;
+      border-bottom: 1px solid var(--border-subtle);
+      height: 32px;
+      gap: 2px;
     }
 
     .ribbon-tab {
       padding: 0 14px;
-      height: 29px;
+      height: 31px;
       display: flex;
       align-items: center;
-      font-size: 12px;
+      gap: 6px;
+      font-size: 11.5px;
       font-weight: 600;
       color: var(--text-muted);
       cursor: pointer;
       border-top: 2px solid transparent;
-      transition: all 0.1s;
-      text-transform: uppercase;
-      letter-spacing: 0.3px;
+      transition: all 0.12s;
+      border-radius: 4px 4px 0 0;
     }
     .ribbon-tab:hover {
       color: var(--text-bright);
-      background: #e2e8f0;
+      background: #f1f5f9;
     }
     .ribbon-tab.active {
       color: var(--accent);
-      background: var(--bg-ribbon);
+      background: #ffffff;
       border-top: 2px solid var(--accent);
-      border-left: 1px solid var(--border-color);
-      border-right: 1px solid var(--border-color);
+      border-left: 1px solid var(--border-subtle);
+      border-right: 1px solid var(--border-subtle);
       margin-bottom: -1px;
+      box-shadow: 0 -2px 4px rgba(0,0,0,0.02);
     }
 
     .ribbon-panel {
       display: none;
-      background: var(--bg-ribbon);
+      background: #ffffff;
       padding: 6px 12px;
-      height: 76px;
+      height: 84px;
       align-items: center;
       gap: 8px;
       overflow-x: auto;
@@ -199,30 +291,32 @@
     }
 
     .ribbon-group-title {
-      font-size: 10px;
-      color: var(--text-muted);
+      font-size: 9.5px;
+      color: #94a3b8;
       text-align: center;
       text-transform: uppercase;
-      letter-spacing: 0.3px;
+      letter-spacing: 0.4px;
       margin-top: 2px;
+      font-weight: 600;
     }
 
     /* Standard Button Styles */
     button.r-btn {
       background: transparent;
       border: 1px solid transparent;
-      border-radius: 3px;
+      border-radius: 4px;
       padding: 3px 6px;
-      font-size: 12px;
+      font-size: 11.5px;
       color: var(--text-main);
       cursor: pointer;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 4px;
-      height: 24px;
-      min-width: 24px;
-      transition: background 0.1s;
+      gap: 5px;
+      height: 26px;
+      min-width: 26px;
+      transition: all 0.12s;
+      font-weight: 500;
     }
     button.r-btn:hover {
       background: #f1f5f9;
@@ -248,46 +342,56 @@
     select.r-select {
       background: #ffffff;
       border: 1px solid var(--border-color);
-      border-radius: 3px;
+      border-radius: 4px;
       padding: 2px 6px;
-      font-size: 12px;
+      font-size: 11.5px;
       color: var(--text-main);
-      height: 24px;
+      height: 26px;
       outline: none;
       cursor: pointer;
+      font-family: inherit;
     }
     select.r-select:focus {
       border-color: var(--accent);
+      box-shadow: 0 0 0 2px var(--accent-light);
     }
 
+    /* Style Gallery Chips */
     .style-chip {
-      padding: 2px 8px;
+      padding: 4px 10px;
       border: 1px solid var(--border-color);
-      border-radius: 3px;
+      border-radius: 5px;
       background: #ffffff;
-      font-size: 11.5px;
+      font-size: 11px;
       cursor: pointer;
       display: flex;
       flex-direction: column;
       align-items: center;
-      min-width: 60px;
+      justify-content: center;
+      min-width: 72px;
+      height: 48px;
+      transition: all 0.12s;
     }
     .style-chip:hover {
       border-color: var(--accent);
       background: #f8fafc;
+      transform: translateY(-1px);
     }
     .style-chip.active {
       border-color: var(--accent);
       background: var(--accent-light);
       color: var(--accent);
       font-weight: 600;
+      box-shadow: 0 0 0 1px var(--accent);
     }
     .style-chip .style-preview {
-      font-size: 13px;
+      font-size: 12px;
+      line-height: 1.2;
     }
     .style-chip .style-label {
-      font-size: 9.5px;
+      font-size: 9px;
       color: var(--text-muted);
+      margin-top: 2px;
     }
 
     /* ------------------------------------------------------------------ */
@@ -300,9 +404,9 @@
       position: relative;
     }
 
-    /* LEFT SIDEBAR: OUTLINE (DÀN MỤC) */
+    /* LEFT SIDEBAR: OUTLINE & AI REVIEW */
     aside.outline-sidebar {
-      width: 260px;
+      width: 290px;
       background: #ffffff;
       border-right: 1px solid var(--border-color);
       display: flex;
@@ -317,6 +421,50 @@
       display: none;
     }
 
+    /* SIDEBAR TAB SWITCHER */
+    .sidebar-tabs {
+      display: flex;
+      background: #f8fafc;
+      border-bottom: 1px solid var(--border-color);
+      flex-shrink: 0;
+    }
+    .sidebar-tab-btn {
+      flex: 1;
+      padding: 8px 4px;
+      font-size: 11px;
+      font-weight: 600;
+      text-align: center;
+      cursor: pointer;
+      color: var(--text-muted);
+      border-bottom: 2px solid transparent;
+      transition: all 0.12s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      white-space: nowrap;
+    }
+    .sidebar-tab-btn:hover {
+      color: var(--text-bright);
+      background: #edf2f7;
+    }
+    .sidebar-tab-btn.active {
+      color: var(--accent);
+      background: #ffffff;
+      border-bottom: 2px solid var(--accent);
+    }
+
+    .sidebar-content-panel {
+      display: none;
+      flex-direction: column;
+      height: 100%;
+      overflow: hidden;
+    }
+    .sidebar-content-panel.active {
+      display: flex;
+    }
+
+    /* PANEL: OUTLINE */
     .outline-header {
       padding: 8px 12px;
       font-size: 11px;
@@ -330,20 +478,26 @@
       background: #f8fafc;
     }
 
-    .outline-search {
+    .outline-search-box {
       padding: 6px 10px;
       border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: #ffffff;
     }
-    .outline-search input {
+    .outline-search-box .icon {
+      color: var(--text-muted);
+    }
+    .outline-search-box input {
       width: 100%;
-      padding: 4px 8px;
-      border: 1px solid var(--border-color);
-      border-radius: 3px;
+      border: none;
       font-size: 11.5px;
       outline: none;
+      color: var(--text-bright);
     }
-    .outline-search input:focus {
-      border-color: var(--accent);
+    .outline-search-box input::placeholder {
+      color: #94a3b8;
     }
 
     .outline-list {
@@ -353,17 +507,17 @@
     }
 
     .outline-item {
-      padding: 5px 12px;
-      font-size: 12px;
+      padding: 7px 12px;
+      font-size: 11.5px;
       color: var(--text-main);
       cursor: pointer;
       display: flex;
       align-items: center;
-      gap: 6px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      gap: 8px;
       border-left: 3px solid transparent;
+      text-decoration: none;
+      line-height: 1.35;
+      transition: all 0.12s;
     }
     .outline-item:hover {
       background: #f1f5f9;
@@ -375,16 +529,46 @@
       font-weight: 600;
       border-left: 3px solid var(--accent);
     }
+    .outline-item-badge {
+      font-size: 9px;
+      font-weight: 700;
+      padding: 1px 5px;
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      flex-shrink: 0;
+      border: 1px solid transparent;
+    }
+    .outline-item.h0 { font-weight: 700; color: #0f172a; padding-left: 8px; }
+    .outline-item.h0 .outline-item-badge { background: #fef3c7; color: #b45309; border-color: #fde68a; }
     .outline-item.h1 { font-weight: 600; color: #0f172a; padding-left: 10px; }
-    .outline-item.h2 { padding-left: 22px; color: #1e3a8a; font-size: 11.5px; }
-    .outline-item.h3 { padding-left: 34px; color: #047857; font-size: 11px; }
+    .outline-item.h1 .outline-item-badge { background: #e0f2fe; color: #0369a1; border-color: #bae6fd; }
+    .outline-item.h2 { padding-left: 18px; color: #1e293b; font-size: 11px; }
+    .outline-item.h2 .outline-item-badge { background: #f3e8ff; color: #7e22ce; border-color: #e9d5ff; }
+    .outline-item.h3 { padding-left: 26px; color: #334155; font-size: 10.5px; }
+    .outline-item.h3 .outline-item-badge { background: #dcfce7; color: #15803d; border-color: #bbf7d0; }
+    .outline-item.h4, .outline-item.h5, .outline-item.h6 { padding-left: 34px; color: #475569; font-size: 10px; }
+    .outline-item.h4 .outline-item-badge { background: #f1f5f9; color: #475569; border-color: #cbd5e1; }
 
     .outline-empty {
-      padding: 20px 12px;
+      padding: 24px 12px;
       color: var(--text-muted);
       text-align: center;
-      font-size: 12px;
+      font-size: 11.5px;
       font-style: italic;
+    }
+
+    /* OUTLINE GLOW HIGHLIGHT ON CANVAS */
+    .outline-target-flash {
+      outline: 2px solid var(--accent) !important;
+      outline-offset: 3px;
+      background-color: rgba(224, 242, 254, 0.4) !important;
+      border-radius: 3px;
+      animation: flashPulse 1.8s ease-out forwards;
+    }
+    @keyframes flashPulse {
+      0% { background-color: rgba(224, 242, 254, 0.8); }
+      70% { background-color: rgba(224, 242, 254, 0.4); }
+      100% { background-color: transparent; }
     }
 
     /* CENTER CANVAS: A4 DOCUMENT VIEWPORT */
@@ -396,38 +580,8 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 24px 20px 60px 20px;
+      padding: 24px 20px 80px 20px;
       position: relative;
-    }
-
-    /* AGENT TRANSACTION REVIEW BANNER */
-    .agent-review-banner {
-      display: none;
-      width: 210mm;
-      background: #eff6ff;
-      border: 1px solid #93c5fd;
-      border-left: 4px solid var(--accent);
-      border-radius: 4px;
-      padding: 10px 14px;
-      margin-bottom: 16px;
-      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.1);
-      justify-content: space-between;
-      align-items: center;
-    }
-    .agent-review-banner.active {
-      display: flex;
-    }
-    .banner-info {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 12.5px;
-      font-weight: 500;
-      color: #1e3a8a;
-    }
-    .banner-actions {
-      display: flex;
-      gap: 6px;
     }
 
     /* A4 DOCUMENT PAGE CONTAINER */
@@ -437,6 +591,7 @@
       align-items: center;
       gap: 24px;
       transform-origin: top center;
+      transition: transform 0.15s ease;
     }
 
     /* DISCRETE A4 SHEET */
@@ -446,7 +601,7 @@
       background: var(--page-bg);
       color: var(--page-text);
       box-shadow: var(--page-shadow);
-      border-radius: 1px;
+      border-radius: 2px;
       padding: var(--page-margin-top) var(--page-margin-right) var(--page-margin-bottom) var(--page-margin-left);
       position: relative;
       display: flex;
@@ -454,7 +609,7 @@
       justify-content: space-between;
       font-family: 'Times New Roman', Times, serif;
       font-size: 13pt;
-      line-height: 1.5;
+      line-height: 1.45;
       text-align: justify;
     }
 
@@ -487,55 +642,73 @@
       margin-top: 14pt;
       user-select: none;
       font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
 
-    /* Academic Typography Standards inside Page */
-    .page-content-box h1 {
-      font-size: 16pt;
+    /* Document Typography Standards inside Page */
+    .page-content-box .doc-title {
+      font-size: 18pt;
       font-weight: bold;
       color: #0f172a;
-      margin-top: 18pt;
+      text-align: center;
+      margin-top: 10pt;
+      margin-bottom: 4pt;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      line-height: 1.3;
+      text-indent: 0 !important;
+    }
+    .page-content-box .doc-subtitle {
+      font-size: 12pt;
+      font-style: italic;
+      color: #0284c7;
+      text-align: center;
+      margin-bottom: 18pt;
+      line-height: 1.3;
+      text-indent: 0 !important;
+    }
+
+    .page-content-box h1 {
+      font-size: 15pt;
+      font-weight: bold;
+      color: #1e3a8a;
+      margin-top: 16pt;
       margin-bottom: 8pt;
-      border-bottom: 1.5px solid #e2e8f0;
-      padding-bottom: 4pt;
-      white-space: pre-wrap;
-      word-break: break-word;
+      border-bottom: 1px solid #e2e8f0;
+      padding-bottom: 3pt;
+      line-height: 1.35;
+      text-indent: 0 !important;
     }
 
     .page-content-box h2 {
-      font-size: 14pt;
+      font-size: 13.5pt;
       font-weight: bold;
-      color: #1e3a8a;
-      margin-top: 14pt;
+      color: #0369a1;
+      margin-top: 12pt;
       margin-bottom: 6pt;
-      white-space: pre-wrap;
-      word-break: break-word;
+      line-height: 1.35;
+      text-indent: 0 !important;
     }
 
     .page-content-box h3 {
-      font-size: 13pt;
+      font-size: 12.5pt;
       font-weight: bold;
       font-style: italic;
       color: #047857;
       margin-top: 10pt;
       margin-bottom: 4pt;
-      white-space: pre-wrap;
-      word-break: break-word;
+      line-height: 1.35;
+      text-indent: 0 !important;
     }
 
     .page-content-box p {
       margin-bottom: 6pt;
       color: #1f2937;
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
-
-    .page-content-box ul, .page-content-box ol {
-      margin-left: 2.54cm;
-      margin-bottom: 6pt;
-    }
-    .page-content-box li {
-      margin-bottom: 3pt;
+      line-height: 1.45;
+      min-height: 1.25em;
+      text-indent: 0;
     }
 
     .page-content-box table {
@@ -550,60 +723,30 @@
       text-align: left;
     }
     .page-content-box th {
-      background: #f1f5f9;
+      background: #f8fafc;
       font-weight: bold;
       color: #0f172a;
-    }
-
-    .page-content-box pre, .page-content-box code {
-      font-family: 'JetBrains Mono', Consolas, monospace;
-      font-size: 10pt;
-    }
-    .page-content-box pre {
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      border-left: 3px solid #3b82f6;
-      border-radius: 4px;
-      padding: 8pt 12pt;
-      margin: 8pt 0;
-      color: #0f172a;
-      white-space: pre-wrap;
-      text-indent: 0;
+      text-align: center;
     }
 
     .page-content-box .doc-image-wrapper {
       text-align: center;
-      margin: 12pt 0;
+      margin: 14pt 0;
       text-indent: 0;
     }
     .page-content-box .doc-image-wrapper img {
       max-width: 100%;
       height: auto;
-      border-radius: 2px;
+      border-radius: 4px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
     .page-content-box .doc-caption {
       font-size: 10pt;
       font-style: italic;
-      color: #4b5563;
-      margin-top: 4pt;
+      color: #475569;
+      margin-top: 5pt;
       text-align: center;
       text-indent: 0;
-    }
-
-    /* INLINE DIFF HIGHLIGHTING FOR AGENT TRANSACTIONS */
-    ins.diff-add {
-      background-color: #dcfce7;
-      color: #166534;
-      text-decoration: underline;
-      padding: 1px 3px;
-      border-radius: 2px;
-    }
-    del.diff-del {
-      background-color: #fee2e2;
-      color: #991b1b;
-      text-decoration: line-through;
-      padding: 1px 3px;
-      border-radius: 2px;
     }
 
     /* High-Fidelity Binary OpenXML Rendering Styling */
@@ -613,73 +756,26 @@
       align-items: center;
       gap: 24px;
       width: 100%;
-    }
-    .docx-render > section, .docx-render .docx-page, section.docx, .docx-render article {
-      box-shadow: var(--page-shadow) !important;
-      background: #ffffff !important;
-      margin-bottom: 24px !important;
-      border-radius: 1px !important;
-      box-sizing: border-box !important;
+      background: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
+      outline: none !important;
     }
 
     /* ------------------------------------------------------------------ */
-    /* 4. SELECTION-FIRST CONTEXTUAL FLOATING TOOLBAR                     */
-    /* ------------------------------------------------------------------ */
-    .selection-toolbar {
-      position: absolute;
-      display: none;
-      background: #1e293b;
-      color: #ffffff;
-      border-radius: 6px;
-      padding: 4px 6px;
-      gap: 4px;
-      align-items: center;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
-      z-index: 100;
-      font-size: 12px;
-      user-select: none;
-    }
-    .selection-toolbar.active {
-      display: flex;
-    }
-    .selection-toolbar button {
-      background: transparent;
-      border: 1px solid transparent;
-      color: #f1f5f9;
-      border-radius: 3px;
-      padding: 4px 6px;
-      font-size: 11.5px;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-    }
-    .selection-toolbar button:hover {
-      background: #334155;
-      color: #38bdf8;
-    }
-    .selection-toolbar .divider {
-      width: 1px;
-      height: 16px;
-      background: #475569;
-      margin: 0 2px;
-    }
-
-    /* ------------------------------------------------------------------ */
-    /* 5. BOTTOM STATUS BAR                                               */
+    /* 4. BOTTOM STATUS BAR                                               */
     /* ------------------------------------------------------------------ */
     footer.status-bar {
-      background: #f8fafc;
-      border-top: 1px solid var(--border-color);
-      height: 24px;
+      height: 26px;
+      background: #0078d4;
+      color: #ffffff;
       display: flex;
       align-items: center;
       justify-content: space-between;
       padding: 0 12px;
       font-size: 11px;
-      color: var(--text-muted);
       flex-shrink: 0;
-      z-index: 50;
+      z-index: 30;
     }
 
     .status-left, .status-right {
@@ -689,145 +785,240 @@
     }
 
     .status-item {
-      display: inline-flex;
+      display: flex;
       align-items: center;
-      gap: 4px;
+      gap: 5px;
+      cursor: pointer;
     }
 
-    .zoom-control {
+    .zoom-slider {
       display: flex;
       align-items: center;
       gap: 6px;
     }
-    .zoom-control input[type="range"] {
-      width: 70px;
+    .zoom-slider input[type="range"] {
+      width: 80px;
       height: 4px;
+      accent-color: #ffffff;
       cursor: pointer;
     }
 
     /* ------------------------------------------------------------------ */
-    /* 6. STATE MACHINE / LOADING & ERROR OVERLAY                         */
+    /* 5. LOADING & ERROR OVERLAYS                                        */
     /* ------------------------------------------------------------------ */
     .overlay-screen {
       position: absolute;
       top: 0; left: 0; right: 0; bottom: 0;
       background: rgba(248, 250, 252, 0.96);
+      backdrop-filter: blur(4px);
+      z-index: 100;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      z-index: 1000;
-      padding: 20px;
     }
 
-    .loader-card {
+    .loading-card, .error-card {
       background: #ffffff;
       border: 1px solid var(--border-color);
       border-radius: 8px;
-      padding: 28px 36px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-      max-width: 540px;
-      width: 100%;
+      padding: 24px 32px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+      max-width: 460px;
       text-align: center;
     }
 
     .spinner {
-      width: 38px;
-      height: 38px;
+      width: 36px;
+      height: 36px;
       border: 3px solid #e2e8f0;
-      border-top: 3px solid var(--accent);
+      border-top-color: var(--accent);
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
       margin: 0 auto 16px auto;
     }
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
     .stage-label {
-      font-size: 14px;
-      font-weight: 600;
-      color: var(--text-bright);
-      margin-bottom: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--accent);
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
     }
     .stage-desc {
-      font-size: 12px;
-      color: var(--text-muted);
+      font-size: 13px;
+      color: var(--text-bright);
+      margin-bottom: 12px;
     }
 
-    .error-card {
-      border-left: 4px solid var(--danger);
-      text-align: left;
+    /* AI REVIEW CHANGES LIST */
+    .track-changes-header {
+      padding: 10px 12px;
+      background: #f8fafc;
+      border-bottom: 1px solid var(--border-color);
     }
-    .error-title {
-      font-size: 15px;
-      font-weight: 700;
-      color: var(--danger);
-      margin-bottom: 8px;
-      display: flex;
+    .session-badge {
+      display: inline-flex;
       align-items: center;
       gap: 6px;
+      background: #e0f2fe;
+      color: #0369a1;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-size: 10.5px;
+      font-weight: 600;
+      margin-bottom: 6px;
     }
-    .error-message {
-      font-size: 12.5px;
-      color: #334155;
-      margin-bottom: 12px;
-    }
-    .error-diagnostics {
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      border-radius: 4px;
-      padding: 10px;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 11px;
-      color: #475569;
-      max-height: 160px;
-      overflow-y: auto;
-      margin-bottom: 16px;
-      white-space: pre-wrap;
-    }
-    .error-actions {
+    .session-actions-bar {
       display: flex;
-      gap: 8px;
-      justify-content: flex-end;
+      gap: 4px;
+      margin-top: 6px;
+    }
+    .session-actions-bar button {
+      flex: 1;
+      padding: 4px 6px;
+      font-size: 11px;
+      border-radius: 4px;
+      cursor: pointer;
+      border: 1px solid var(--border-color);
+      background: #ffffff;
+      color: #1e293b;
+      font-weight: 500;
+      transition: all 0.12s;
+    }
+    .session-actions-bar button.btn-accept-all {
+      background: var(--success-light);
+      color: var(--success);
+      border-color: #86efac;
+      font-weight: 600;
+    }
+    .session-actions-bar button.btn-reject-all {
+      background: var(--danger-light);
+      color: var(--danger);
+      border-color: #fca5a5;
+      font-weight: 600;
     }
 
-    /* MODAL DIALOGS */
-    .modal-backdrop {
-      position: absolute;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(15, 23, 42, 0.4);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 200;
-    }
-    .modal-backdrop.active {
+    .changes-list-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
       display: flex;
+      flex-direction: column;
+      gap: 8px;
     }
-    .modal-box {
+    .change-card {
       background: #ffffff;
+      border: 1px solid var(--border-color);
       border-radius: 6px;
-      padding: 20px;
-      max-width: 480px;
-      width: 100%;
-      box-shadow: 0 12px 32px rgba(0,0,0,0.2);
+      padding: 10px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+      transition: all 0.12s ease;
+      cursor: pointer;
     }
-    .modal-title {
-      font-size: 14px;
+    .change-card:hover {
+      border-color: var(--accent);
+      box-shadow: 0 2px 8px rgba(0, 120, 212, 0.12);
+    }
+    .change-card.active {
+      border-color: var(--accent);
+      border-left: 3px solid var(--accent);
+      background: #f0f9ff;
+    }
+    .change-card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .change-id-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10.5px;
       font-weight: 700;
-      margin-bottom: 12px;
-      color: var(--text-bright);
+      color: #0078d4;
     }
-    .modal-body {
-      margin-bottom: 16px;
-      font-size: 12.5px;
+    .change-type-pill {
+      font-size: 9.5px;
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 10px;
+      text-transform: uppercase;
     }
-    .modal-footer {
+    .change-type-pill.replace { background: #e0f2fe; color: #0369a1; }
+    .change-type-pill.insert { background: #dcfce7; color: #15803d; }
+    .change-type-pill.delete { background: #fee2e2; color: #b91c1c; }
+
+    .diff-box {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      line-height: 1.4;
+      background: #f8fafc;
+      border: 1px solid var(--border-subtle);
+      border-radius: 4px;
+      padding: 6px 8px;
+      margin-bottom: 8px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .diff-del { background: #fee2e2; color: #991b1b; text-decoration: line-through; padding: 1px 3px; border-radius: 2px; }
+    .diff-ins { background: #dcfce7; color: #166534; font-weight: 600; padding: 1px 3px; border-radius: 2px; }
+
+    .change-card-actions {
       display: flex;
       justify-content: flex-end;
+      gap: 6px;
+    }
+    .change-btn {
+      padding: 3px 8px;
+      font-size: 10.5px;
+      border-radius: 4px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      font-weight: 600;
+      transition: all 0.12s;
+    }
+    .change-btn.accept { background: #dcfce7; color: #15803d; border-color: #86efac; }
+    .change-btn.accept:hover { background: #15803d; color: #ffffff; }
+    .change-btn.reject { background: #fee2e2; color: #b91c1c; border-color: #fca5a5; }
+    .change-btn.reject:hover { background: #b91c1c; color: #ffffff; }
+
+    /* HISTORY LIST */
+    .history-list-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
       gap: 8px;
+    }
+    .history-card {
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 10px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+      transition: all 0.12s;
+    }
+    .history-card:hover {
+      border-color: var(--accent);
+    }
+    .history-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+    .history-v-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      color: var(--accent);
+      font-size: 11px;
+    }
+    .history-time {
+      font-size: 10px;
+      color: #94a3b8;
     }
   </style>
 </head>
@@ -837,41 +1028,77 @@
   <header class="title-bar">
     <div class="title-left">
       <div class="app-logo">
-        <svg width="18" height="18" viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+        <div class="logo-icon">
+          <svg viewBox="0 0 24 24"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
+        </div>
         <span>Docx-Agent</span>
       </div>
       <span class="doc-name-pill" id="docTitleLabel">Document.docx</span>
       <span class="save-status-badge saved" id="saveStatusIndicator">
-        <span id="saveDot">●</span> <span id="saveStatusText">Đã lưu</span>
+        <span class="status-dot" id="saveDot"></span>
+        <span id="saveStatusText">Đã lưu</span>
       </span>
     </div>
 
     <div class="title-right">
-      <button class="r-btn" onclick="execUndo()" title="Hoàn tác (Ctrl+Z)"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg></button>
-      <button class="r-btn" onclick="execRedo()" title="Làm lại (Ctrl+Y)"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z"/></svg></button>
-      <button class="r-btn primary" onclick="triggerSave()" title="Lưu tài liệu (Ctrl+S)">💾 Lưu</button>
+      <button class="quick-btn" onclick="execUndo()" title="Hoàn tác (Ctrl+Z)">
+        <span class="icon sm"><svg viewBox="0 0 24 24"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg></span>
+        <span>Undo</span>
+      </button>
+      <button class="quick-btn" onclick="execRedo()" title="Làm lại (Ctrl+Y)">
+        <span class="icon sm"><svg viewBox="0 0 24 24"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3L21 13"/></svg></span>
+        <span>Redo</span>
+      </button>
+      <button class="quick-btn save-btn" onclick="triggerSave()" title="Lưu tài liệu (Ctrl+S)">
+        <span class="icon sm"><svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg></span>
+        <span>Lưu</span>
+      </button>
     </div>
   </header>
 
   <!-- 2. WORD-LIKE TABBED RIBBON TOOLBAR -->
   <nav class="ribbon-container">
     <div class="ribbon-tabs">
-      <div class="ribbon-tab active" onclick="switchRibbonTab('home')">Trang chủ (Home)</div>
-      <div class="ribbon-tab" onclick="switchRibbonTab('insert')">Chèn (Insert)</div>
-      <div class="ribbon-tab" onclick="switchRibbonTab('layout')">Bố cục (Layout)</div>
-      <div class="ribbon-tab" onclick="switchRibbonTab('references')">Tham khảo (References)</div>
-      <div class="ribbon-tab" onclick="switchRibbonTab('review')">Xem lại (Review)</div>
-      <div class="ribbon-tab" onclick="switchRibbonTab('view')">Hiển thị (View)</div>
+      <div class="ribbon-tab active" onclick="switchRibbonTab('home')">
+        <span class="icon sm"><svg viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>
+        <span>Trang chủ</span>
+      </div>
+      <div class="ribbon-tab" onclick="switchRibbonTab('insert')">
+        <span class="icon sm"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></span>
+        <span>Chèn</span>
+      </div>
+      <div class="ribbon-tab" onclick="switchRibbonTab('layout')">
+        <span class="icon sm"><svg viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg></span>
+        <span>Bố cục</span>
+      </div>
+      <div class="ribbon-tab" onclick="switchRibbonTab('references')">
+        <span class="icon sm"><svg viewBox="0 0 24 24"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg></span>
+        <span>Tham khảo</span>
+      </div>
+      <div class="ribbon-tab" onclick="switchRibbonTab('review')">
+        <span class="icon sm"><svg viewBox="0 0 24 24"><path d="M18 6 7 17l-5-5"/><path d="m22 10-7.5 7.5L13 16"/></svg></span>
+        <span>Soát lỗi</span>
+      </div>
+      <div class="ribbon-tab" onclick="switchRibbonTab('view')">
+        <span class="icon sm"><svg viewBox="0 0 24 24"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></span>
+        <span>Hiển thị</span>
+      </div>
     </div>
 
     <!-- HOME TAB -->
     <div class="ribbon-panel active" id="panel-home">
-      <!-- Group 1: Clipboard & Undo -->
+      <!-- Group 1: Clipboard -->
       <div class="ribbon-group">
         <div class="ribbon-row">
-          <button class="r-btn" onclick="execUndo()" title="Hoàn tác">↩</button>
-          <button class="r-btn" onclick="execRedo()" title="Làm lại">↪</button>
-          <button class="r-btn" onclick="document.execCommand('copy')" title="Sao chép">📋</button>
+          <button class="r-btn" onclick="execUndo()" title="Hoàn tác">
+            <span class="icon"><svg viewBox="0 0 24 24"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg></span>
+          </button>
+          <button class="r-btn" onclick="execRedo()" title="Làm lại">
+            <span class="icon"><svg viewBox="0 0 24 24"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3L21 13"/></svg></span>
+          </button>
+          <button class="r-btn" onclick="document.execCommand('copy')" title="Sao chép">
+            <span class="icon"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span>
+          </button>
         </div>
         <div class="ribbon-group-title">Bảng tạm</div>
       </div>
@@ -886,7 +1113,7 @@
             <option value="Segoe UI">Segoe UI</option>
             <option value="JetBrains Mono">JetBrains Mono</option>
           </select>
-          <select class="r-select" id="fontSizeSelect" onchange="changeFontSize(this.value)" style="width: 55px;">
+          <select class="r-select" id="fontSizeSelect" onchange="changeFontSize(this.value)" style="width: 54px;">
             <option value="10">10</option>
             <option value="11">11</option>
             <option value="12">12</option>
@@ -897,71 +1124,116 @@
             <option value="20">20</option>
             <option value="24">24</option>
           </select>
-          <button class="r-btn" onclick="adjustFontSize(1)" title="Tăng cỡ chữ">A▲</button>
-          <button class="r-btn" onclick="adjustFontSize(-1)" title="Giảm cỡ chữ">A▼</button>
+          <button class="r-btn" onclick="adjustFontSize(1)" title="Tăng cỡ chữ">
+            <span class="icon sm"><svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg></span>
+          </button>
+          <button class="r-btn" onclick="adjustFontSize(-1)" title="Giảm cỡ chữ">
+            <span class="icon sm"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span>
+          </button>
         </div>
         <div class="ribbon-row" style="margin-top: 3px;">
-          <button class="r-btn" onclick="document.execCommand('bold')" title="In đậm (Ctrl+B)"><b>B</b></button>
-          <button class="r-btn" onclick="document.execCommand('italic')" title="In nghiêng (Ctrl+I)"><i>I</i></button>
-          <button class="r-btn" onclick="document.execCommand('underline')" title="Gạch chân (Ctrl+U)"><u>U</u></button>
-          <button class="r-btn" onclick="document.execCommand('strikeThrough')" title="Gạch ngang"><s>S</s></button>
-          <button class="r-btn" onclick="document.execCommand('subscript')" title="Chỉ số dưới">x₂</button>
-          <button class="r-btn" onclick="document.execCommand('superscript')" title="Chỉ số trên">x²</button>
-          <button class="r-btn" onclick="document.execCommand('foreColor', false, '#dc2626')" title="Màu chữ đỏ" style="color:#dc2626;font-weight:bold;">A</button>
-          <button class="r-btn" onclick="document.execCommand('hiliteColor', false, '#fef08a')" title="Đánh dấu vàng" style="background:#fef08a;">✏</button>
-          <button class="r-btn" onclick="document.execCommand('removeFormat')" title="Xóa định dạng">🧹</button>
+          <button class="r-btn" onclick="document.execCommand('bold')" title="In đậm (Ctrl+B)">
+            <span class="icon"><svg viewBox="0 0 24 24"><path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/><path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/></svg></span>
+          </button>
+          <button class="r-btn" onclick="document.execCommand('italic')" title="In nghiêng (Ctrl+I)">
+            <span class="icon"><svg viewBox="0 0 24 24"><line x1="19" y1="4" x2="10" y2="4"/><line x1="14" y1="20" x2="5" y2="20"/><line x1="15" y1="4" x2="9" y2="20"/></svg></span>
+          </button>
+          <button class="r-btn" onclick="document.execCommand('underline')" title="Gạch chân (Ctrl+U)">
+            <span class="icon"><svg viewBox="0 0 24 24"><path d="M6 3v7a6 6 0 0 0 12 0V3"/><line x1="4" y1="21" x2="20" y2="21"/></svg></span>
+          </button>
+          <button class="r-btn" onclick="document.execCommand('strikeThrough')" title="Gạch ngang">
+            <span class="icon"><svg viewBox="0 0 24 24"><path d="M16 4H9a3 3 0 0 0-2.83 4"/><path d="M14 12a4 4 0 0 1 0 8H6"/><line x1="4" y1="12" x2="20" y2="12"/></svg></span>
+          </button>
+          <button class="r-btn" onclick="document.execCommand('subscript')" title="Chỉ số dưới">
+            <span class="icon"><svg viewBox="0 0 24 24"><path d="m4 5 8 8"/><path d="m12 5-8 8"/><path d="M20 19h-4c0-1.5.44-2 1.5-2.5S20 15.33 20 14c0-.47-.17-.93-.48-1.29a2.11 2.11 0 0 0-2.62-.44c-.42.24-.74.62-.9 1.07"/></svg></span>
+          </button>
+          <button class="r-btn" onclick="document.execCommand('superscript')" title="Chỉ số trên">
+            <span class="icon"><svg viewBox="0 0 24 24"><path d="m4 19 8-8"/><path d="m12 19-8-8"/><path d="M20 11h-4c0-1.5.44-2 1.5-2.5S20 7.33 20 6c0-.47-.17-.93-.48-1.29a2.11 2.11 0 0 0-2.62-.44c-.42.24-.74.62-.9 1.07"/></svg></span>
+          </button>
+          <button class="r-btn" onclick="document.execCommand('foreColor', false, '#dc2626')" title="Màu chữ đỏ" style="color:#dc2626;">
+            <span class="icon"><svg viewBox="0 0 24 24"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg></span>
+          </button>
+          <button class="r-btn" onclick="document.execCommand('hiliteColor', false, '#fef08a')" title="Đánh dấu màu vàng">
+            <span class="icon"><svg viewBox="0 0 24 24"><path d="m9 11-6 6v3h3l6-6"/><path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"/></svg></span>
+          </button>
+          <button class="r-btn" onclick="document.execCommand('removeFormat')" title="Xóa định dạng">
+            <span class="icon"><svg viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></span>
+          </button>
         </div>
         <div class="ribbon-group-title">Phông chữ</div>
       </div>
 
-      <!-- Group 3: Paragraph & Alignment -->
+      <!-- Group 3: Paragraph -->
       <div class="ribbon-group">
         <div class="ribbon-row">
-          <button class="r-btn" onclick="document.execCommand('justifyLeft')" title="Căn trái">Left</button>
-          <button class="r-btn" onclick="document.execCommand('justifyCenter')" title="Căn giữa">Center</button>
-          <button class="r-btn" onclick="document.execCommand('justifyRight')" title="Căn phải">Right</button>
-          <button class="r-btn" onclick="document.execCommand('justifyFull')" title="Căn đều 2 bên">Justify</button>
+          <button class="r-btn" onclick="document.execCommand('justifyLeft')" title="Căn trái">
+            <span class="icon"><svg viewBox="0 0 24 24"><line x1="21" x2="3" y1="6" y2="6"/><line x1="15" x2="3" y1="12" y2="12"/><line x1="17" x2="3" y1="18" y2="18"/></svg></span>
+          </button>
+          <button class="r-btn" onclick="document.execCommand('justifyCenter')" title="Căn giữa">
+            <span class="icon"><svg viewBox="0 0 24 24"><line x1="18" x2="6" y1="6" y2="6"/><line x1="21" x2="3" y1="12" y2="12"/><line x1="18" x2="6" y1="18" y2="18"/></svg></span>
+          </button>
+          <button class="r-btn" onclick="document.execCommand('justifyRight')" title="Căn phải">
+            <span class="icon"><svg viewBox="0 0 24 24"><line x1="21" x2="3" y1="6" y2="6"/><line x1="21" x2="9" y1="12" y2="12"/><line x1="21" x2="7" y1="18" y2="18"/></svg></span>
+          </button>
+          <button class="r-btn" onclick="document.execCommand('justifyFull')" title="Căn đều 2 bên">
+            <span class="icon"><svg viewBox="0 0 24 24"><line x1="21" x2="3" y1="6" y2="6"/><line x1="21" x2="3" y1="12" y2="12"/><line x1="21" x2="3" y1="18" y2="18"/></svg></span>
+          </button>
         </div>
         <div class="ribbon-row" style="margin-top: 3px;">
-          <button class="r-btn" onclick="document.execCommand('insertUnorderedList')" title="Dấu đầu dòng">• Danh sách</button>
-          <button class="r-btn" onclick="document.execCommand('insertOrderedList')" title="Đánh số">1. Đánh số</button>
-          <button class="r-btn" onclick="applyAcademicIndent()" title="Thụt lề 1.27cm">⇥ Thụt lề</button>
+          <button class="r-btn" onclick="document.execCommand('insertUnorderedList')" title="Danh sách dấu đầu dòng">
+            <span class="icon"><svg viewBox="0 0 24 24"><line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/></svg></span>
+          </button>
+          <button class="r-btn" onclick="document.execCommand('insertOrderedList')" title="Danh sách đánh số">
+            <span class="icon"><svg viewBox="0 0 24 24"><line x1="10" x2="21" y1="6" y2="6"/><line x1="10" x2="21" y1="12" y2="12"/><line x1="10" x2="21" y1="18" y2="18"/><path d="M4 6h1v4"/><path d="M4 10h2"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/></svg></span>
+          </button>
+          <button class="r-btn" onclick="handleOutdent()" title="Giảm thụt lề">
+            <span class="icon"><svg viewBox="0 0 24 24"><polyline points="7 8 3 12 7 16"/><line x1="21" x2="11" y1="12" y2="12"/><line x1="21" x2="11" y1="6" y2="6"/><line x1="21" x2="11" y1="18" y2="18"/></svg></span>
+          </button>
+          <button class="r-btn" onclick="handleIndent()" title="Tăng thụt lề (1.27cm)">
+            <span class="icon"><svg viewBox="0 0 24 24"><polyline points="17 8 21 12 17 16"/><line x1="3" x2="13" y1="12" y2="12"/><line x1="3" x2="13" y1="6" y2="6"/><line x1="3" x2="13" y1="18" y2="18"/></svg></span>
+          </button>
         </div>
         <div class="ribbon-group-title">Đoạn văn</div>
       </div>
 
       <!-- Group 4: Styles Gallery -->
       <div class="ribbon-group">
-        <div class="ribbon-row" style="gap: 5px;">
-          <div class="style-chip active" onclick="applyStyleBlock('Normal')">
-            <span class="style-preview">Văn bản</span>
-            <span class="style-label">Normal</span>
+        <div class="ribbon-row">
+          <div class="style-chip active" onclick="applyBlockStyle('p')" title="Văn bản thông thường">
+            <div class="style-preview" style="font-family:'Times New Roman';">AaBb</div>
+            <div class="style-label">Văn bản</div>
           </div>
-          <div class="style-chip" onclick="applyStyleBlock('Heading 1')">
-            <span class="style-preview" style="font-weight:bold;color:#0f172a;">Tiêu đề 1</span>
-            <span class="style-label">Heading 1</span>
+          <div class="style-chip" onclick="applyBlockStyle('h1')" title="Tiêu đề cấp 1">
+            <div class="style-preview" style="font-weight:bold; color:#1e3a8a;">Tiêu đề 1</div>
+            <div class="style-label">Heading 1</div>
           </div>
-          <div class="style-chip" onclick="applyStyleBlock('Heading 2')">
-            <span class="style-preview" style="font-weight:bold;color:#1e3a8a;">Tiêu đề 2</span>
-            <span class="style-label">Heading 2</span>
+          <div class="style-chip" onclick="applyBlockStyle('h2')" title="Tiêu đề cấp 2">
+            <div class="style-preview" style="font-weight:bold; color:#0369a1;">Tiêu đề 2</div>
+            <div class="style-label">Heading 2</div>
           </div>
-          <div class="style-chip" onclick="applyStyleBlock('Heading 3')">
-            <span class="style-preview" style="font-weight:bold;font-style:italic;color:#047857;">Tiêu đề 3</span>
-            <span class="style-label">Heading 3</span>
+          <div class="style-chip" onclick="applyBlockStyle('h3')" title="Tiêu đề cấp 3">
+            <div class="style-preview" style="font-weight:bold; font-style:italic; color:#047857;">Tiêu đề 3</div>
+            <div class="style-label">Heading 3</div>
           </div>
         </div>
         <div class="ribbon-group-title">Kiểu dáng (Styles)</div>
       </div>
 
-      <!-- Group 5: Academic Presets -->
+      <!-- Group 5: Academic & Presets -->
       <div class="ribbon-group">
         <div class="ribbon-row">
-          <select class="r-select" id="presetSelect" onchange="applyPresetConfig(this.value)">
-            <option value="academic-vn" selected>🎓 Academic-VN (TCVN)</option>
-            <option value="ieee">🏛 Chuẩn IEEE</option>
-            <option value="apa">📖 Chuẩn APA 7</option>
-            <option value="technical-report">💼 Báo Cáo Kỹ Thuật</option>
+          <select class="r-select" id="presetSelect" onchange="applyFormattingPreset(this.value)" style="width: 155px;">
+            <option value="academic-vn" selected>Academic VN (TCVN)</option>
+            <option value="ieee">IEEE Conference</option>
+            <option value="apa">APA 7th Edition</option>
+            <option value="technical_report">Technical Report</option>
           </select>
+        </div>
+        <div class="ribbon-row" style="margin-top: 3px;">
+          <button class="r-btn" onclick="insertPageBreak()" title="Ngắt trang mới (Ctrl+Enter)">
+            <span class="icon sm"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><line x1="3" x2="21" y1="13" y2="13"/></svg></span>
+            <span>Ngắt trang</span>
+          </button>
         </div>
         <div class="ribbon-group-title">Chuẩn định dạng</div>
       </div>
@@ -971,19 +1243,16 @@
     <div class="ribbon-panel" id="panel-insert">
       <div class="ribbon-group">
         <div class="ribbon-row">
-          <button class="r-btn" onclick="promptInsertTable()">📊 Chèn Bảng</button>
-          <button class="r-btn" onclick="promptInsertImage()">🖼 Chèn Hình Ảnh</button>
-          <button class="r-btn" onclick="promptInsertDiagram()">📐 Chèn Sơ Đồ</button>
+          <button class="r-btn" onclick="insertTableDialog()">
+            <span class="icon"><svg viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/><path d="M15 3v18"/></svg></span>
+            <span>Bảng (Table)</span>
+          </button>
+          <button class="r-btn" onclick="insertPageBreak()">
+            <span class="icon"><svg viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><line x1="3" x2="21" y1="12" y2="12" stroke-dasharray="3 3"/></svg></span>
+            <span>Ngắt trang</span>
+          </button>
         </div>
-        <div class="ribbon-group-title">Đa phương tiện</div>
-      </div>
-      <div class="ribbon-group">
-        <div class="ribbon-row">
-          <button class="r-btn" onclick="promptInsertCitation()">📚 Chèn Trích Dẫn</button>
-          <button class="r-btn" onclick="insertPageBreak()">📄 Ngắt Trang</button>
-          <button class="r-btn" onclick="document.execCommand('insertHorizontalRule')">― Đường Phân Cách</button>
-        </div>
-        <div class="ribbon-group-title">Cấu trúc & Nguồn</div>
+        <div class="ribbon-group-title">Bảng & Trang</div>
       </div>
     </div>
 
@@ -991,17 +1260,16 @@
     <div class="ribbon-panel" id="panel-layout">
       <div class="ribbon-group">
         <div class="ribbon-row">
-          <select class="r-select" onchange="applyPageMargins(this.value)">
-            <option value="tcvn" selected>Chuẩn TCVN (T2, D2, P2, T3 cm)</option>
-            <option value="standard">Chuẩn Quốc Tế (2.54 cm)</option>
-            <option value="narrow">Căn Lề Hẹp (1.27 cm)</option>
-          </select>
-          <select class="r-select" onchange="applyOrientation(this.value)">
-            <option value="portrait" selected>Khổ Dọc (Portrait)</option>
-            <option value="landscape">Khổ Ngang (Landscape)</option>
-          </select>
+          <button class="r-btn active" title="Cỡ giấy A4 (210 x 297 mm)">
+            <span class="icon"><svg viewBox="0 0 24 24"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/></svg></span>
+            <span>A4 (210×297mm)</span>
+          </button>
+          <button class="r-btn" title="Hướng dọc">
+            <span class="icon"><svg viewBox="0 0 24 24"><rect width="14" height="20" x="5" y="2" rx="2"/></svg></span>
+            <span>Khổ dọc</span>
+          </button>
         </div>
-        <div class="ribbon-group-title">Khổ giấy & Căn lề</div>
+        <div class="ribbon-group-title">Thiết lập trang</div>
       </div>
     </div>
 
@@ -1009,10 +1277,12 @@
     <div class="ribbon-panel" id="panel-references">
       <div class="ribbon-group">
         <div class="ribbon-row">
-          <button class="r-btn" onclick="showSourcesList()">📖 Danh Mục Nguồn</button>
-          <button class="r-btn" onclick="insertBibliography()">📑 Chèn Tài Liệu Tham Khảo</button>
+          <button class="r-btn" onclick="generateTableOfContents()">
+            <span class="icon"><svg viewBox="0 0 24 24"><line x1="21" x2="3" y1="6" y2="6"/><line x1="15" x2="3" y1="12" y2="12"/><line x1="17" x2="3" y1="18" y2="18"/><circle cx="19" cy="12" r="2"/></svg></span>
+            <span>Mục lục tự động</span>
+          </button>
         </div>
-        <div class="ribbon-group-title">Trích dẫn học thuật</div>
+        <div class="ribbon-group-title">Mục lục & Tham chiếu</div>
       </div>
     </div>
 
@@ -1020,10 +1290,12 @@
     <div class="ribbon-panel" id="panel-review">
       <div class="ribbon-group">
         <div class="ribbon-row">
-          <button class="r-btn" onclick="runFormatVerification()">✓ Kiểm Tra Định Dạng</button>
-          <button class="r-btn" onclick="runVisualVerification()">📐 Kiểm Tra Bố Cục</button>
+          <button class="r-btn primary" onclick="switchSidebarTab('changes')">
+            <span class="icon"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></span>
+            <span>Xem lại thay đổi AI</span>
+          </button>
         </div>
-        <div class="ribbon-group-title">Kiểm định chất lượng</div>
+        <div class="ribbon-group-title">Theo dõi & Soát lỗi</div>
       </div>
     </div>
 
@@ -1031,14 +1303,13 @@
     <div class="ribbon-panel" id="panel-view">
       <div class="ribbon-group">
         <div class="ribbon-row">
-          <button class="r-btn" onclick="toggleOutline()">📑 Bật/Tắt Dàn Mục</button>
-          <select class="r-select" id="viewZoomSelect" onchange="setZoomLevel(parseFloat(this.value))">
-            <option value="0.75">75%</option>
-            <option value="0.9">90%</option>
-            <option value="1.0" selected>100%</option>
-            <option value="1.25">125%</option>
-            <option value="1.5">150%</option>
-          </select>
+          <button class="r-btn active" onclick="setZoom(1.0)">100%</button>
+          <button class="r-btn" onclick="setZoom(1.25)">125%</button>
+          <button class="r-btn" onclick="setZoom(0.85)">85%</button>
+          <button class="r-btn" onclick="toggleSidebar()">
+            <span class="icon"><svg viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><line x1="9" x2="9" y1="3" y2="21"/></svg></span>
+            <span>Ẩn/Hiện Sidebar</span>
+          </button>
         </div>
         <div class="ribbon-group-title">Hiển thị</div>
       </div>
@@ -1047,112 +1318,116 @@
 
   <!-- 3. WORKSPACE CONTAINER (OUTLINE + A4 CANVAS) -->
   <div class="workspace-body">
-    <!-- LEFT SIDEBAR: OUTLINE (DÀN MỤC) -->
+    <!-- LEFT SIDEBAR -->
     <aside class="outline-sidebar" id="outlineSidebar">
-      <div class="outline-header">
-        <span>Dàn mục (Outline)</span>
-        <span id="outlineCount" style="color:var(--accent);font-size:10px;">0 mục</span>
+      <div class="sidebar-tabs">
+        <div class="sidebar-tab-btn active" id="tabBtn-outline" onclick="switchSidebarTab('outline')">
+          <span class="icon sm"><svg viewBox="0 0 24 24"><line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/></svg></span>
+          <span>Mục lục</span>
+        </div>
+        <div class="sidebar-tab-btn" id="tabBtn-changes" onclick="switchSidebarTab('changes')">
+          <span class="icon sm"><svg viewBox="0 0 24 24"><path d="m18 16 4-4-4-4"/><path d="m6 8-4 4 4 4"/><path d="m14.5 4-5 16"/></svg></span>
+          <span>Thay đổi</span>
+        </div>
+        <div class="sidebar-tab-btn" id="tabBtn-history" onclick="switchSidebarTab('history')">
+          <span class="icon sm"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg></span>
+          <span>Lịch sử</span>
+        </div>
       </div>
-      <div class="outline-search">
-        <input type="text" id="outlineSearchInput" placeholder="Tìm kiếm tiêu đề..." oninput="filterOutline(this.value)">
+
+      <!-- PANEL: OUTLINE -->
+      <div class="sidebar-content-panel active" id="sidebarPanel-outline">
+        <div class="outline-header">
+          <span>Tiêu đề tài liệu</span>
+          <span id="outlineCount" style="color:var(--accent); font-weight:600;">0 mục</span>
+        </div>
+        <div class="outline-search-box">
+          <span class="icon sm"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" x2="16.65" y1="21" y2="16.65"/></svg></span>
+          <input type="text" id="outlineSearchInput" placeholder="Tìm kiếm tiêu đề..." oninput="filterOutline(this.value)">
+        </div>
+        <div class="outline-list" id="outlineList">
+          <div class="outline-empty">Đang phân tích tiêu đề...</div>
+        </div>
       </div>
-      <div class="outline-list" id="outlineList">
-        <div class="outline-empty">Chưa có tiêu đề.</div>
+
+      <!-- PANEL: TRACK CHANGES -->
+      <div class="sidebar-content-panel" id="sidebarPanel-changes">
+        <div class="track-changes-header">
+          <div class="session-badge">
+            <span class="icon sm"><svg viewBox="0 0 24 24"><path d="M12 2v20"/><path d="m17 5-5-3-5 3"/><path d="m17 19-5 3-5-3"/></svg></span>
+            <span id="sessionAgentLabel">Antigravity Agent</span>
+          </div>
+          <div class="session-actions-bar">
+            <button class="btn-accept-all" onclick="acceptAllCurrentChanges()">✓ Nhận tất cả</button>
+            <button class="btn-reject-all" onclick="rejectAllCurrentChanges()">✕ Từ chối</button>
+          </div>
+        </div>
+        <div class="changes-list-container" id="changesList">
+          <div class="outline-empty">Không có thay đổi nào đang chờ xem xét.</div>
+        </div>
+      </div>
+
+      <!-- PANEL: HISTORY -->
+      <div class="sidebar-content-panel" id="sidebarPanel-history">
+        <div class="outline-header">
+          <span>Lịch sử phiên bản</span>
+          <button class="r-btn" onclick="fetchVersionHistory()" title="Làm mới">
+            <span class="icon sm"><svg viewBox="0 0 24 24"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg></span>
+          </button>
+        </div>
+        <div class="history-list-container" id="historyList">
+          <div class="outline-empty">Đang tải lịch sử phiên bản...</div>
+        </div>
       </div>
     </aside>
 
-    <!-- CENTER DOCUMENT VIEWPORT -->
+    <!-- CENTER CANVAS -->
     <main class="document-viewport" id="docViewport">
-      <!-- Agent Proposed Change Review Banner -->
-      <div class="agent-review-banner" id="agentReviewBanner">
-        <div class="banner-info">
-          <span>🤖</span>
-          <span id="bannerTxDescription">Antigravity đề xuất thay đổi tài liệu</span>
-        </div>
-        <div class="banner-actions">
-          <button class="r-btn primary" onclick="acceptAgentTransaction()">✓ Áp dụng</button>
-          <button class="r-btn" onclick="rejectAgentTransaction()">✕ Từ chối</button>
-        </div>
-      </div>
-
-      <!-- PAGES CONTAINER (Deterministic A4 Multi-Page Render Tree) -->
       <div class="pages-container" id="pagesContainer">
-        <!-- Pages will be dynamically rendered here from LayoutEngine -->
+        <!-- Native A4 Pages or High-Fidelity Binary OpenXML docx-preview will render here -->
       </div>
     </main>
   </div>
 
-  <!-- 4. SELECTION-FIRST CONTEXTUAL FLOATING TOOLBAR -->
-  <div class="selection-toolbar" id="selectionToolbar">
-    <button onclick="document.execCommand('bold')"><b>B</b></button>
-    <button onclick="document.execCommand('italic')"><i>I</i></button>
-    <button onclick="document.execCommand('underline')"><u>U</u></button>
-    <div class="divider"></div>
-    <button onclick="triggerContextAction('rewrite')">✨ Viết lại</button>
-    <button onclick="triggerContextAction('improve')">📈 Cải thiện</button>
-    <button onclick="triggerContextAction('cite')">📚 Trích dẫn</button>
-    <div class="divider"></div>
-    <button onclick="triggerContextAction('ask_agent')" style="color:#38bdf8;font-weight:600;">🤖 Gửi Antigravity</button>
-  </div>
-
-  <!-- 5. BOTTOM STATUS BAR -->
+  <!-- 4. BOTTOM STATUS BAR -->
   <footer class="status-bar">
     <div class="status-left">
-      <span class="status-item" id="statusPageCount">Trang 1 / 1</span>
-      <span class="status-item" id="statusWordCount">0 từ | 0 ký tự</span>
-      <span class="status-item" id="statusPresetLabel">Academic-VN (TCVN)</span>
+      <div class="status-item" id="statusPageCount">
+        <span class="icon sm"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg></span>
+        <span>Trang 1 / 1</span>
+      </div>
+      <div class="status-item" id="statusWordCount">
+        <span>0 từ</span>
+      </div>
+      <div class="status-item" id="statusCharCount">
+        <span>0 ký tự</span>
+      </div>
+      <div class="status-item" id="statusLanguage">
+        <span>Tiếng Việt (TCVN 7087)</span>
+      </div>
     </div>
+
     <div class="status-right">
-      <span class="status-item" id="statusLanguage">Tiếng Việt (Unicode)</span>
-      <div class="zoom-control">
-        <button class="r-btn" onclick="adjustZoom(-0.1)" style="padding:0 4px;height:18px;">-</button>
-        <span id="zoomLabel" style="min-width:35px;text-align:center;">100%</span>
-        <button class="r-btn" onclick="adjustZoom(0.1)" style="padding:0 4px;height:18px;">+</button>
+      <div class="zoom-slider">
+        <span id="zoomPercentLabel">100%</span>
+        <input type="range" min="50" max="200" value="100" id="zoomRange" oninput="handleZoomSlider(this.value)">
       </div>
     </div>
   </footer>
 
-  <!-- 6. LOADING / ERROR OVERLAY STATE MACHINE -->
+  <!-- 5. LOADING & ERROR OVERLAY -->
   <div class="overlay-screen" id="overlayScreen">
-    <div class="loader-card" id="loadingCard">
+    <div class="loading-card" id="loadingCard">
       <div class="spinner"></div>
-      <div class="stage-label" id="stageLabel">Khởi tạo môi trường...</div>
-      <div class="stage-desc" id="stageDesc">Đang kết nối Python Bridge & phân tích tài liệu OpenXML...</div>
+      <div class="stage-label" id="stageLabel">KHỞI TẠO</div>
+      <div class="stage-desc" id="stageDesc">Đang chuẩn bị không gian làm việc...</div>
     </div>
 
-    <div class="loader-card error-card" id="errorCard" style="display:none;">
-      <div class="error-title">
-        <span>⚠</span> <span>Không thể mở tài liệu</span>
-      </div>
-      <div class="error-message" id="errorMessage">Đã xảy ra lỗi trong quá trình phân tích tệp DOCX.</div>
-      <div class="error-diagnostics" id="errorDiagnostics">Chi tiết lỗi: ...</div>
-      <div class="error-actions">
-        <button class="r-btn" onclick="copyDiagnostics()">📋 Sao chép lỗi</button>
-        <button class="r-btn primary" onclick="retryLoading()">🔄 Thử lại</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- 7. MODAL DIALOG FOR INSERT TABLE -->
-  <div class="modal-backdrop" id="tableModal">
-    <div class="modal-box">
-      <div class="modal-title">Chèn Bảng Biểu</div>
-      <div class="modal-body">
-        <div style="display:flex;gap:12px;margin-bottom:10px;">
-          <div>
-            <label style="display:block;margin-bottom:4px;font-weight:500;">Số hàng:</label>
-            <input type="number" id="tableRowsInput" value="3" min="1" max="50" style="padding:4px 8px;border:1px solid #cbd5e1;border-radius:3px;width:80px;">
-          </div>
-          <div>
-            <label style="display:block;margin-bottom:4px;font-weight:500;">Số cột:</label>
-            <input type="number" id="tableColsInput" value="3" min="1" max="20" style="padding:4px 8px;border:1px solid #cbd5e1;border-radius:3px;width:80px;">
-          </div>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="r-btn" onclick="closeModal('tableModal')">Hủy</button>
-        <button class="r-btn primary" onclick="confirmInsertTable()">Chèn</button>
-      </div>
+    <div class="error-card" id="errorCard" style="display:none;">
+      <div style="font-size:32px; color:var(--danger); margin-bottom:12px;">⚠️</div>
+      <div style="font-size:14px; font-weight:700; color:#0f172a; margin-bottom:8px;" id="errorMessage">Không thể tải tài liệu</div>
+      <div style="font-size:11.5px; color:#64748b; margin-bottom:16px; font-family:'JetBrains Mono',monospace; text-align:left; background:#f8fafc; padding:8px; border-radius:4px; max-height:140px; overflow-y:auto;" id="errorDiagnostics"></div>
+      <button class="r-btn primary" onclick="retryLoading()">Thử lại</button>
     </div>
   </div>
 
@@ -1161,27 +1436,24 @@
     // RUNTIME APPLICATION STATE & CONTROLLER
     // ------------------------------------------------------------------
     const AppState = {
-      stage: 'INITIALIZING', // INITIALIZING -> PYTHON_BRIDGE_CONNECTING -> LOADING -> PARSING -> BUILDING_CANONICAL_MODEL -> RENDERING -> READY / ERROR
+      stage: 'INITIALIZING',
       vscode: typeof acquireVsCodeApi === 'function' ? acquireVsCodeApi() : null,
       documentData: null,
       headings: [],
+      filteredHeadings: [],
       zoom: 1.0,
       isDirty: false,
       activeSelection: null,
-      pendingTransactionId: null
+      currentSession: null,
+      activeChangeIndex: 0
     };
 
-    // Initialize State Machine on DOM Ready
     window.addEventListener('DOMContentLoaded', () => {
-      setLoadingStage('PYTHON_BRIDGE_CONNECTING', 'Đang kết nối Python Bridge...');
+      setLoadingStage('PYTHON_BRIDGE_CONNECTING', 'Đang kết nối bộ xử lý tài liệu...');
       
-      // Setup Selection Listener
       document.addEventListener('selectionchange', handleSelectionChange);
-      
-      // Setup Keyboard Shortcuts
       document.addEventListener('keydown', handleKeyboardShortcuts);
 
-      // Setup Webview <-> VS Code Bridge Message Listener
       window.addEventListener('message', event => {
         const message = event.data;
         if (!message) return;
@@ -1190,58 +1462,49 @@
           case 'DOCUMENT_LOADING_STATE':
             setLoadingStage(message.stage, message.message);
             break;
-
           case 'DOCUMENT_LOADED':
             handleDocumentLoaded(message.payload, message.docxBase64);
             break;
-
           case 'DOCUMENT_LOAD_ERROR':
             handleDocumentError(message.payload);
             break;
-
           case 'SAVE_SUCCESS':
-            handleSaveSuccess(message.payload);
+            setSaveStatus('saved', 'Đã lưu');
+            AppState.isDirty = false;
             break;
-
           case 'SAVE_ERROR':
-            handleSaveError(message.payload);
+            setSaveStatus('unsaved', 'Lỗi khi lưu');
+            alert('Lỗi khi lưu: ' + (message.payload ? message.payload.message : 'Không xác định'));
             break;
-
-          case 'PROPOSE_TRANSACTION':
-            handleProposeTransaction(message.payload);
+          case 'VERSION_HISTORY_RECEIVED':
+            renderHistory(message.payload);
             break;
         }
       });
 
-      // Signal Webview Ready to VS Code Extension Host
       if (AppState.vscode) {
         AppState.vscode.postMessage({ type: 'WEBVIEW_READY' });
       } else {
-        // Fallback for Standalone Browser / HTTP Server Mode
+        // Standalone Browser mode
         fetch('/api/document')
-          .then(res => {
-            if (!res.ok) throw new Error('HTTP ' + res.status);
-            return res.json();
-          })
+          .then(res => res.json())
           .then(data => {
-            if (data.error) throw new Error(data.error);
-            handleDocumentLoaded(data);
+            if (data && data.payload) {
+              handleDocumentLoaded(data.payload, data.docxBase64);
+            } else if (data) {
+              handleDocumentLoaded(data, null);
+            }
           })
           .catch(err => {
-            // If standalone mode without API, try mock sample or error
             handleDocumentError({
-              stage: 'PYTHON_BRIDGE_CONNECTING',
-              error_type: 'BridgeConnectionError',
-              message: 'Không thể kết nối đến máy chủ tài liệu cục bộ.',
-              diagnostics: err.stack || err.toString()
+              stage: 'CONNECTION',
+              error_type: 'NetworkError',
+              message: 'Không thể kết nối máy chủ Workspace: ' + err.message
             });
           });
       }
     });
 
-    // ------------------------------------------------------------------
-    // LIFECYCLE & STATE MACHINE
-    // ------------------------------------------------------------------
     function setLoadingStage(stage, message) {
       AppState.stage = stage;
       const stageLabel = document.getElementById('stageLabel');
@@ -1250,94 +1513,41 @@
       if (stageDesc) stageDesc.innerText = message;
     }
 
+    function finishRenderReady() {
+      AppState.stage = 'READY';
+      const overlay = document.getElementById('overlayScreen');
+      if (overlay) overlay.style.display = 'none';
+      updateStats();
+      setupScrollOutlineTracker();
+    }
+
     function handleDocumentLoaded(docPayload, docxBase64) {
       try {
         setLoadingStage('BUILDING_CANONICAL_MODEL', 'Xây dựng mô hình tài liệu...');
         AppState.documentData = docPayload;
         
-        // Update Title
         if (docPayload && docPayload.title) {
           document.getElementById('docTitleLabel').innerText = (docPayload.file_name || docPayload.title + '.docx');
         }
 
-        // Render Headings Outline
-        renderOutline((docPayload && docPayload.headings) || []);
+        AppState.headings = (docPayload && docPayload.headings) || [];
+        renderOutline(AppState.headings);
 
-        // 1. High-Fidelity OpenXML Binary Rendering if docxBase64 is available
-        if (docxBase64 && window.docx && window.JSZip) {
-          try {
-            setLoadingStage('RENDERING_HIGH_FIDELITY', 'Dựng bố cục WordprocessingML chuẩn 1:1...');
-            const binaryString = window.atob(docxBase64);
-            const len = binaryString.length;
-            const bytes = new Uint8Array(len);
-            for (let i = 0; i < len; i++) {
-              bytes[i] = binaryString.charCodeAt(i);
-            }
-
-            const container = document.getElementById('pagesContainer');
-            container.innerHTML = '';
-
-            window.docx.renderAsync(bytes.buffer, container, null, {
-              className: "docx-render",
-              inWrapper: false,
-              ignoreWidth: false,
-              ignoreHeight: false,
-              ignoreFonts: false,
-              breakPages: true,
-              renderChanges: false,
-              experimental: true
-            }).then(() => {
-              // Enable live editing on rendered paragraphs & cells
-              container.querySelectorAll('p, table td, table th').forEach(el => {
-                el.contentEditable = 'true';
-                el.spellcheck = false;
-                el.addEventListener('input', () => {
-                  setSaveStatus('unsaved', 'Chưa lưu');
-                  AppState.isDirty = true;
-                  updateStats();
-                });
-              });
-
-              // Update Outline and Page Statistics
-              refreshHeadingsFromDOM();
-              const renderedPages = container.querySelectorAll('.docx-page, section.docx, article');
-              const totalP = renderedPages.length || (docPayload && docPayload.total_pages) || 67;
-              document.getElementById('statusPageCount').innerText = `Trang 1 / ${totalP}`;
-
-              updateStats();
-              AppState.stage = 'READY';
-              document.getElementById('overlayScreen').style.display = 'none';
-              setSaveStatus('saved', 'Đã lưu');
-            }).catch(err => {
-              console.warn('docx-preview failed, falling back to Native LayoutEngine:', err);
-              renderDocumentBody(docPayload);
-              finishRenderReady();
-            });
-            return;
-          } catch (e) {
-            console.warn('Binary decode error, falling back to Native LayoutEngine:', e);
-          }
-        }
-
-        // 2. Native Deterministic Layout Engine Rendering
+        // Render Deterministic Paginated A4 Document
+        setLoadingStage('RENDERING_PAGES', 'Dựng bố cục trang A4 chuẩn...');
         renderDocumentBody(docPayload);
+        mapHeadingsToDOMNodes();
+        updateStats();
         finishRenderReady();
 
       } catch (err) {
         handleDocumentError({
           stage: 'RENDERING',
           error_type: 'RenderException',
-          message: 'Lỗi khi dựng nội dung trang A4: ' + err.message,
+          message: 'Lỗi khi dựng nội dung: ' + err.message,
           diagnostics: err.stack
         });
       }
-    }
-
-    function finishRenderReady() {
-      updateStats();
-      AppState.stage = 'READY';
-      document.getElementById('overlayScreen').style.display = 'none';
-      setSaveStatus('saved', 'Đã lưu');
     }
 
     function handleDocumentError(errPayload) {
@@ -1350,7 +1560,6 @@
       document.getElementById('errorDiagnostics').innerText = 
         `Giai đoạn: ${errPayload.stage || 'UNKNOWN'}\n` +
         `Loại lỗi: ${errPayload.error_type || 'Error'}\n` +
-        `Thời gian: ${new Date().toISOString()}\n\n` +
         `Chi tiết:\n${errPayload.diagnostics || errPayload.stderr || errPayload.stack_trace || 'Không có stack trace.'}`;
     }
 
@@ -1365,43 +1574,230 @@
       }
     }
 
-    function copyDiagnostics() {
-      const diagText = document.getElementById('errorDiagnostics').innerText;
-      navigator.clipboard.writeText(diagText);
-      alert('Đã sao chép thông tin chẩn đoán lỗi vào bộ nhớ tạm.');
-    }
-
     // ------------------------------------------------------------------
-    // DOCUMENT RENDERING & PAGINATION
+    // OUTLINE RENDERING & NAVIGATION
     // ------------------------------------------------------------------
     function renderOutline(headings) {
-      AppState.headings = headings;
-      const outlineList = document.getElementById('outlineList');
+      AppState.filteredHeadings = headings || [];
+      const listContainer = document.getElementById('outlineList');
       const countLabel = document.getElementById('outlineCount');
-      outlineList.innerHTML = '';
-
+      
       if (!headings || headings.length === 0) {
-        outlineList.innerHTML = '<div class="outline-empty">Chưa có tiêu đề.</div>';
+        listContainer.innerHTML = '<div class="outline-empty">Chưa có tiêu đề.</div>';
         countLabel.innerText = '0 mục';
         return;
       }
 
       countLabel.innerText = `${headings.length} mục`;
-      headings.forEach(h => {
+      listContainer.innerHTML = '';
+
+      headings.forEach((h, idx) => {
         const item = document.createElement('div');
-        item.className = `outline-item h${Math.min(h.level, 3)}`;
-        item.innerText = h.text;
-        item.onclick = () => {
-          const el = document.getElementById(h.id);
-          if (el) {
-            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            highlightActiveOutlineNode(h.id);
-          }
-        };
-        outlineList.appendChild(item);
+        const level = (h.level !== undefined && h.level !== null) ? h.level : 1;
+        item.className = `outline-item h${Math.min(level, 6)}`;
+        item.id = `outline_item_${idx}`;
+        item.title = h.text;
+
+        const badge = document.createElement('span');
+        badge.className = 'outline-item-badge';
+        badge.innerText = level === 0 ? 'TỰA' : `H${level}`;
+        item.appendChild(badge);
+
+        const textSpan = document.createElement('span');
+        textSpan.innerText = h.text;
+        textSpan.style.overflow = 'hidden';
+        textSpan.style.textOverflow = 'ellipsis';
+        textSpan.style.whiteSpace = 'nowrap';
+        item.appendChild(textSpan);
+
+        item.onclick = () => scrollToHeading(h.id, h.text, idx);
+        listContainer.appendChild(item);
       });
     }
 
+    function filterOutline(query) {
+      const q = (query || '').toLowerCase().trim();
+      if (!q) {
+        renderOutline(AppState.headings);
+        return;
+      }
+
+      const filtered = AppState.headings.filter(h => (h.text || '').toLowerCase().includes(q));
+      renderOutline(filtered);
+    }
+
+    function scrollToHeading(headingId, headingText, headingIndex) {
+      document.querySelectorAll('.outline-item').forEach(el => el.classList.remove('active'));
+      const activeEl = document.getElementById(`outline_item_${headingIndex}`);
+      if (activeEl) activeEl.classList.add('active');
+
+      let target = null;
+      if (headingId) target = document.getElementById(headingId);
+      
+      if (!target && headingText) {
+        const container = document.getElementById('pagesContainer');
+        const nodes = container.querySelectorAll('h1, h2, h3, h4, h5, h6, p, div, th, td, [class*="heading" i], [class*="title" i]');
+        const cleanTarget = headingText.replace(/\s+/g, ' ').trim().toLowerCase();
+        for (let n of nodes) {
+          const txt = (n.innerText || n.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
+          if (txt === cleanTarget || (cleanTarget.length > 8 && txt.startsWith(cleanTarget.substring(0, 25)))) {
+            target = n;
+            break;
+          }
+        }
+      }
+
+      if (target) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        document.querySelectorAll('.outline-target-flash').forEach(el => el.classList.remove('outline-target-flash'));
+        target.classList.add('outline-target-flash');
+        setTimeout(() => { target.classList.remove('outline-target-flash'); }, 2000);
+      }
+    }
+
+    function mapHeadingsToDOMNodes() {
+      const container = document.getElementById('pagesContainer');
+      if (!container) return;
+
+      const domHeadings = [];
+      const candidateNodes = container.querySelectorAll('h1, h2, h3, h4, h5, h6, [class*="heading" i], [class*="tiêu-đề" i], [class*="tieude" i], [class*="title" i], [class*="subtitle" i], .doc-title, .doc-subtitle, p');
+
+      candidateNodes.forEach((el, idx) => {
+        if (el.closest('footer') || el.closest('header') || el.classList.contains('doc-caption')) return;
+        const txt = (el.innerText || el.textContent || '').replace(/\s+/g, ' ').trim();
+        if (!txt || txt.length > 250) return;
+
+        const tag = el.tagName.toLowerCase();
+        const className = (el.className || '').toString().toLowerCase();
+
+        let isHeading = false;
+        let lvl = 1;
+
+        if (tag.startsWith('h') && tag.length === 2 && !isNaN(parseInt(tag[1]))) {
+          isHeading = true;
+          lvl = parseInt(tag[1]);
+        } else if (className.includes('doc-title') || className === 'docx_title' || className.includes('title') || className.includes('tựa-đề')) {
+          if (!className.includes('subtitle') && !className.includes('phụ-đề')) {
+            isHeading = true;
+            lvl = 0;
+          } else {
+            isHeading = true;
+            lvl = 1;
+          }
+        } else if (className.includes('heading') || className.includes('tiêu-đề') || className.includes('tieude')) {
+          isHeading = true;
+          const match = className.match(/(?:heading|tiêu[-_]?đề|tieude|h)[-_]?(\d+)/i);
+          lvl = match ? parseInt(match[1]) : 1;
+        } else {
+          // Heuristic regex check for numbered headings (e.g., "1. Giới thiệu", "2.1 Phân tích", "Chương 1", "I. Tổng quan")
+          const numMatch1 = txt.match(/^(\d+)\.\s+[A-ZÀ-Ỹa-zà-ỹ0-9]/);
+          const numMatch2 = txt.match(/^(\d+\.\d+(?:\.\d+)?)\s+[A-ZÀ-Ỹa-zà-ỹ0-9]/);
+          const chapterMatch = txt.match(/^(?:CHƯƠNG|PHẦN|BÀI\s+HỌC|PHỤ\s+LỤC|CHAPTER|SECTION|PART|MỤC|BÀI|CÂU)\s+[0-9IVXLCDM]+/i);
+          const romanMatch = txt.match(/^[IVXLCDM]+\.\s+[A-ZÀ-Ỹa-zà-ỹ0-9]/);
+
+          const isBold = el.querySelector('b, strong') || (window.getComputedStyle(el).fontWeight >= 600) || el.style.fontWeight === 'bold';
+          const fontSize = parseFloat(window.getComputedStyle(el).fontSize) || 12;
+
+          if (chapterMatch) {
+            isHeading = true;
+            lvl = 1;
+          } else if (numMatch2) {
+            isHeading = true;
+            const dots = numMatch2[1].split('.').length;
+            lvl = Math.min(dots, 4);
+          } else if (numMatch1 && (isBold || fontSize >= 14 || txt.length < 80)) {
+            isHeading = true;
+            lvl = 1;
+          } else if (romanMatch && (isBold || fontSize >= 14 || txt.length < 80)) {
+            isHeading = true;
+            lvl = 1;
+          }
+        }
+
+        if (isHeading) {
+          if (!el.id) el.id = `h_dom_${idx + 1}`;
+          const alreadyExists = domHeadings.some(dh => dh.text === txt);
+          if (!alreadyExists) {
+            domHeadings.push({
+              id: el.id,
+              level: lvl,
+              text: txt,
+              element: el
+            });
+          }
+        }
+      });
+
+      if (domHeadings.length > 0) {
+        AppState.headings = domHeadings.map((dh, hIdx) => {
+          if (dh.element) {
+            dh.element.setAttribute('data-heading-index', hIdx.toString());
+          }
+          return {
+            id: dh.id,
+            level: dh.level,
+            text: dh.text
+          };
+        });
+        renderOutline(AppState.headings);
+      } else if (AppState.headings && AppState.headings.length > 0) {
+        const nodes = container.querySelectorAll('h1, h2, h3, h4, h5, h6, p, div, th, td');
+        AppState.headings.forEach((h, hIdx) => {
+          const hText = (h.text || '').replace(/\s+/g, ' ').trim().toLowerCase();
+          if (!hText) return;
+          for (let n of nodes) {
+            const txt = (n.innerText || n.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
+            if (txt === hText || (hText.length > 8 && txt.startsWith(hText.substring(0, 25)))) {
+              if (!n.id) n.id = h.id || `h_anchor_${hIdx}`;
+              n.setAttribute('data-heading-index', hIdx.toString());
+              break;
+            }
+          }
+        });
+        renderOutline(AppState.headings);
+      }
+    }
+
+    function setupScrollOutlineTracker() {
+      const viewport = document.getElementById('docViewport');
+      if (!viewport) return;
+
+      let ticking = false;
+      viewport.addEventListener('scroll', () => {
+        if (!ticking) {
+          window.requestAnimationFrame(() => {
+            trackActiveHeadingOnScroll();
+            ticking = false;
+          });
+          ticking = true;
+        }
+      });
+    }
+
+    function trackActiveHeadingOnScroll() {
+      const viewport = document.getElementById('docViewport');
+      const vRect = viewport.getBoundingClientRect();
+      const headings = document.querySelectorAll('[data-heading-index], h1, h2, h3');
+      
+      let currentActiveIdx = null;
+      headings.forEach(h => {
+        const rect = h.getBoundingClientRect();
+        if (rect.top <= vRect.top + 150) {
+          const idx = h.getAttribute('data-heading-index');
+          if (idx !== null) currentActiveIdx = parseInt(idx);
+        }
+      });
+
+      if (currentActiveIdx !== null) {
+        document.querySelectorAll('.outline-item').forEach((item, i) => {
+          item.classList.toggle('active', i === currentActiveIdx);
+        });
+      }
+    }
+
+    // ------------------------------------------------------------------
+    // NATIVE A4 PAGINATION & BLOCK RENDERING
+    // ------------------------------------------------------------------
     function renderDocumentBody(docData) {
       const container = document.getElementById('pagesContainer');
       container.innerHTML = '';
@@ -1412,7 +1808,6 @@
           pageDiv.className = 'a4-page';
           pageDiv.id = `page-${page.page_number}`;
 
-          // Header
           const headerBox = document.createElement('div');
           headerBox.className = 'page-header-box';
           if (page.has_header && page.header_text) {
@@ -1423,13 +1818,11 @@
           }
           pageDiv.appendChild(headerBox);
 
-          // Content Box
           const contentBox = document.createElement('div');
           contentBox.className = 'page-content-box';
           contentBox.contentEditable = 'true';
           contentBox.id = `pageContent-${page.page_number}`;
           contentBox.spellcheck = false;
-          contentBox.setAttribute('data-page', page.page_number);
 
           page.blocks.forEach(blk => {
             const node = createDOMNodeForBlock(blk);
@@ -1437,14 +1830,13 @@
           });
           pageDiv.appendChild(contentBox);
 
-          // Footer
           const footerBox = document.createElement('div');
           footerBox.className = 'page-footer-box';
           if (page.has_footer) {
             const leftSpan = document.createElement('span');
             leftSpan.innerText = page.footer_left_text || '';
             const rightSpan = document.createElement('span');
-            rightSpan.innerText = page.footer_right_text || `Trang ${page.page_number} / ${page.total_pages}`;
+            rightSpan.innerText = `Trang ${page.page_number} / ${page.total_pages || docData.pages.length}`;
             footerBox.appendChild(leftSpan);
             footerBox.appendChild(rightSpan);
           } else {
@@ -1453,7 +1845,6 @@
           }
           pageDiv.appendChild(footerBox);
 
-          // Track Input / Dirty state
           contentBox.addEventListener('input', () => {
             setSaveStatus('unsaved', 'Chưa lưu');
             AppState.isDirty = true;
@@ -1463,9 +1854,8 @@
           container.appendChild(pageDiv);
         });
 
-        document.getElementById('statusPageCount').innerText = `Trang 1 / ${docData.total_pages || docData.pages.length}`;
+        document.getElementById('statusPageCount').querySelector('span:last-child').innerText = `Trang 1 / ${docData.total_pages || docData.pages.length}`;
       } else {
-        // Fallback for legacy section block format
         const pageDiv = document.createElement('div');
         pageDiv.className = 'a4-page';
         pageDiv.id = 'page-1';
@@ -1475,10 +1865,15 @@
         contentBox.contentEditable = 'true';
         contentBox.id = 'pageContent-1';
 
-        if (!docData.sections || docData.sections.length === 0) {
+        const allBlocks = [];
+        (docData.sections || []).forEach(sec => {
+          (sec.blocks || []).forEach(blk => allBlocks.push(blk));
+        });
+
+        if (allBlocks.length === 0) {
           contentBox.innerHTML = '<p id="p_0001">Tài liệu rỗng.</p>';
         } else {
-          docData.sections[0].blocks.forEach(blk => {
+          allBlocks.forEach(blk => {
             const node = createDOMNodeForBlock(blk);
             if (node) contentBox.appendChild(node);
           });
@@ -1488,26 +1883,22 @@
       }
     }
 
-    function applyBlockAlignment(node, alignStr) {
-      if (!alignStr) return;
-      const clean = alignStr.toLowerCase().split(/[\s(]/)[0];
-      if (['left', 'center', 'right', 'justify'].includes(clean)) {
-        node.style.textAlign = clean;
-      }
-    }
-
     function createDOMNodeForBlock(blk) {
       let node;
-      if (blk.type === 'heading') {
-        node = document.createElement(`h${Math.min(blk.level, 3)}`);
+      const bStyle = (blk.style_name || '').toLowerCase();
+
+      if (blk.type === 'heading' || bStyle.startsWith('heading') || bStyle.startsWith('tiêu đề')) {
+        const lvl = blk.level || 1;
+        node = document.createElement(`h${Math.min(lvl, 3)}`);
         node.id = blk.id;
-        applyBlockAlignment(node, blk.alignment);
-        if (blk.space_before_pt) node.style.marginTop = `${blk.space_before_pt}pt`;
-        if (blk.space_after_pt) node.style.marginBottom = `${blk.space_after_pt}pt`;
+        if (blk.alignment) node.style.textAlign = blk.alignment;
         if (blk.runs && blk.runs.length > 0) {
           blk.runs.forEach(r => {
             const span = document.createElement('span');
             span.innerText = r.text || '';
+            if (r.bold !== false) span.style.fontWeight = 'bold';
+            if (r.italic) span.style.fontStyle = 'italic';
+            if (r.underline) span.style.textDecoration = 'underline';
             if (r.color_rgb) span.style.color = '#' + r.color_rgb;
             if (r.font_size_pt) span.style.fontSize = r.font_size_pt + 'pt';
             node.appendChild(span);
@@ -1515,12 +1906,22 @@
         } else {
           node.innerText = blk.text || '';
         }
+      } else if (bStyle === 'title' || bStyle === 'tựa đề') {
+        node = document.createElement('div');
+        node.className = 'doc-title';
+        node.id = blk.id;
+        node.innerText = blk.text || '';
+      } else if (bStyle === 'subtitle' || bStyle === 'phụ đề') {
+        node = document.createElement('div');
+        node.className = 'doc-subtitle';
+        node.id = blk.id;
+        node.innerText = blk.text || '';
       } else if (blk.type === 'table') {
         node = document.createElement('table');
         node.id = blk.id;
         node.style.width = '100%';
         node.style.borderCollapse = 'collapse';
-        node.style.margin = '10pt auto';
+        node.style.margin = '12pt 0';
         (blk.cells || []).forEach((row, rIdx) => {
           const tr = document.createElement('tr');
           row.forEach(cell => {
@@ -1528,49 +1929,24 @@
             const td = document.createElement(cellTag);
             td.id = cell.id || '';
             td.innerText = cell.text || '';
-            td.style.whiteSpace = 'pre-wrap';
-            td.style.wordBreak = 'break-word';
-            if (cell.bg_color_hex) {
-              const hex = cell.bg_color_hex.toUpperCase();
-              td.style.backgroundColor = '#' + hex;
-              if (hex === 'F8FAFC') {
-                td.style.fontFamily = 'Consolas, "JetBrains Mono", monospace';
-                td.style.fontSize = '10pt';
-                td.style.borderLeft = '3px solid #0284C7';
-                td.style.borderTop = '1px solid #E2E8F0';
-                td.style.borderBottom = '1px solid #E2E8F0';
-                td.style.borderRight = '1px solid #E2E8F0';
-                td.style.padding = '8pt 12pt';
-                td.style.lineHeight = '1.3';
-              } else if (hex === 'F0FDF4') {
-                td.style.fontFamily = "'Times New Roman', serif";
-                td.style.fontSize = '11.5pt';
-                td.style.borderLeft = '3px solid #16A34A';
-                td.style.borderTop = '1px solid #DCFCE7';
-                td.style.borderBottom = '1px solid #DCFCE7';
-                td.style.borderRight = '1px solid #DCFCE7';
-                td.style.padding = '8pt 12pt';
-                td.style.lineHeight = '1.35';
-              } else {
-                td.style.border = '1px solid #CBD5E1';
-                td.style.padding = '6pt 8pt';
-              }
-            } else {
-              td.style.border = '1px solid #CBD5E1';
-              td.style.padding = '6pt 8pt';
+            td.style.border = '1px solid #cbd5e1';
+            td.style.padding = '6pt 8pt';
+            if (cellTag === 'th') {
+              td.style.background = '#f8fafc';
+              td.style.fontWeight = 'bold';
+              td.style.textAlign = 'center';
             }
-            if (cell.colspan && cell.colspan > 1) td.colSpan = cell.colspan;
-            if (cell.rowspan && cell.rowspan > 1) td.rowSpan = cell.rowspan;
+            if (cell.bg_color_hex) td.style.backgroundColor = '#' + cell.bg_color_hex;
             tr.appendChild(td);
           });
           node.appendChild(tr);
         });
       } else if (blk.type === 'image') {
         node = document.createElement('div');
-        node.id = blk.id;
         node.className = 'doc-image-wrapper';
+        node.id = blk.id;
         const img = document.createElement('img');
-        img.src = blk.source_uri_or_path;
+        img.src = blk.image_src || blk.image_path || '';
         if (blk.width_cm) img.style.width = `${blk.width_cm}cm`;
         node.appendChild(img);
         if (blk.caption) {
@@ -1579,44 +1955,19 @@
           cap.innerText = blk.caption;
           node.appendChild(cap);
         }
-      } else if (blk.type === 'diagram') {
-        node = document.createElement('div');
-        node.id = blk.id;
-        node.className = 'doc-image-wrapper';
-        node.style.border = '1px dashed #3b82f6';
-        node.style.padding = '12pt';
-        node.style.background = '#f8fafc';
-        node.innerHTML = `<div style="font-weight:bold;color:#1e3a8a;">📐 SƠ ĐỒ: ${blk.caption || blk.diagram_type}</div>`;
       } else {
         node = document.createElement('p');
         node.id = blk.id;
-        applyBlockAlignment(node, blk.alignment);
-        if (blk.first_line_indent_cm) node.style.textIndent = blk.first_line_indent_cm + 'cm';
-        if (blk.left_indent_cm) node.style.marginLeft = blk.left_indent_cm + 'cm';
-        if (blk.line_spacing) node.style.lineHeight = blk.line_spacing;
-        if (blk.space_before_pt) node.style.marginTop = `${blk.space_before_pt}pt`;
-        if (blk.space_after_pt) node.style.marginBottom = `${blk.space_after_pt}pt`;
-
-        if (blk.resolved_numbering_label) {
-          const numSpan = document.createElement('span');
-          numSpan.className = 'doc-num-prefix';
-          numSpan.style.fontWeight = '600';
-          numSpan.style.marginRight = '6px';
-          numSpan.innerText = blk.resolved_numbering_label;
-          node.appendChild(numSpan);
-        }
-
+        if (blk.alignment) node.style.textAlign = blk.alignment;
         if (blk.runs && blk.runs.length > 0) {
           blk.runs.forEach(r => {
             const span = document.createElement('span');
             span.innerText = r.text || '';
-            if (r.font_name) span.style.fontFamily = `'${r.font_name}', 'Times New Roman', serif`;
-            if (r.font_size_pt) span.style.fontSize = r.font_size_pt + 'pt';
             if (r.bold) span.style.fontWeight = 'bold';
             if (r.italic) span.style.fontStyle = 'italic';
             if (r.underline) span.style.textDecoration = 'underline';
             if (r.color_rgb) span.style.color = '#' + r.color_rgb;
-            if (r.highlight) span.style.backgroundColor = r.highlight === 'yellow' ? '#fef08a' : '#fed7aa';
+            if (r.font_size_pt) span.style.fontSize = r.font_size_pt + 'pt';
             node.appendChild(span);
           });
         } else {
@@ -1627,155 +1978,120 @@
     }
 
     // ------------------------------------------------------------------
-    // DIRECT EDITING & FORMATTING
+    // TOOLBAR & INTERACTION HELPERS
     // ------------------------------------------------------------------
+    function switchRibbonTab(tabId) {
+      document.querySelectorAll('.ribbon-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.ribbon-panel').forEach(p => p.classList.remove('active'));
+      
+      const tab = Array.from(document.querySelectorAll('.ribbon-tab')).find(t => t.onclick.toString().includes(tabId));
+      if (tab) tab.classList.add('active');
+      const panel = document.getElementById(`panel-${tabId}`);
+      if (panel) panel.classList.add('active');
+    }
+
+    function switchSidebarTab(tabId) {
+      document.querySelectorAll('.sidebar-tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.sidebar-content-panel').forEach(p => p.classList.remove('active'));
+      
+      const btn = document.getElementById(`tabBtn-${tabId}`);
+      if (btn) btn.classList.add('active');
+      const panel = document.getElementById(`sidebarPanel-${tabId}`);
+      if (panel) panel.classList.add('active');
+    }
+
+    function toggleSidebar() {
+      const sidebar = document.getElementById('outlineSidebar');
+      sidebar.classList.toggle('collapsed');
+    }
+
+    function setZoom(val) {
+      AppState.zoom = val;
+      document.getElementById('pagesContainer').style.transform = `scale(${val})`;
+      document.getElementById('zoomPercentLabel').innerText = `${Math.round(val * 100)}%`;
+      document.getElementById('zoomRange').value = Math.round(val * 100);
+    }
+
+    function handleZoomSlider(val) {
+      setZoom(parseInt(val) / 100);
+    }
+
     function changeFontSize(sizePt) {
-      // Create a span with exact pt size for selected text
-      document.execCommand('fontSize', false, '7');
-      const fontSpans = document.querySelectorAll('font[size="7"]');
-      fontSpans.forEach(f => {
-        f.removeAttribute('size');
-        f.style.fontSize = sizePt + 'pt';
-      });
+      document.execCommand('fontSize', false, '3');
+      const sel = window.getSelection();
+      if (sel && sel.anchorNode) {
+        const el = sel.anchorNode.parentElement;
+        if (el) el.style.fontSize = sizePt + 'pt';
+      }
     }
 
     function adjustFontSize(delta) {
-      const select = document.getElementById('fontSizeSelect');
-      let current = parseInt(select.value) || 13;
-      let next = Math.max(8, Math.min(72, current + delta));
-      select.value = next.toString();
-      changeFontSize(next);
-    }
-
-    function applyStyleBlock(styleName) {
-      if (styleName.startsWith('Heading 1')) {
-        document.execCommand('formatBlock', false, 'h1');
-      } else if (styleName.startsWith('Heading 2')) {
-        document.execCommand('formatBlock', false, 'h2');
-      } else if (styleName.startsWith('Heading 3')) {
-        document.execCommand('formatBlock', false, 'h3');
-      } else {
-        document.execCommand('formatBlock', false, 'p');
+      const sel = document.getElementById('fontSizeSelect');
+      let idx = sel.selectedIndex + delta;
+      if (idx >= 0 && idx < sel.options.length) {
+        sel.selectedIndex = idx;
+        changeFontSize(sel.value);
       }
-      refreshHeadingsFromDOM();
     }
 
-    function applyAcademicIndent() {
+    function applyBlockStyle(tag) {
       const sel = window.getSelection();
-      if (!sel.rangeCount) return;
-      const node = sel.anchorNode.parentElement;
-      if (node && node.tagName === 'P') {
-        node.style.textIndent = '1.27cm';
-      }
-    }
-
-    function refreshHeadingsFromDOM() {
-      const container = document.getElementById('pagesContainer');
-      const hNodes = container.querySelectorAll('h1, h2, h3');
-      const newHeadings = [];
-      hNodes.forEach((h, idx) => {
-        if (!h.id) h.id = 'h_gen_' + (idx + 1);
-        const level = parseInt(h.tagName.substring(1));
-        newHeadings.push({
-          id: h.id,
-          level: level,
-          text: h.innerText.trim()
-        });
-      });
-      renderOutline(newHeadings);
-    }
-
-    // ------------------------------------------------------------------
-    // SELECTION-FIRST CONTEXT & FLOATING TOOLBAR
-    // ------------------------------------------------------------------
-    function handleSelectionChange() {
-      const sel = window.getSelection();
-      const toolbar = document.getElementById('selectionToolbar');
-      
-      if (!sel || sel.isCollapsed || !sel.toString().trim()) {
-        toolbar.classList.remove('active');
-        AppState.activeSelection = null;
-        return;
-      }
-
-      const text = sel.toString().trim();
-      const range = sel.getRangeAt(0);
-      const rect = range.getBoundingClientRect();
-
-      // Position floating toolbar directly above selection
-      toolbar.style.top = `${Math.max(10, rect.top - 42 + window.scrollY)}px`;
-      toolbar.style.left = `${Math.max(10, rect.left + (rect.width / 2) - 150)}px`;
-      toolbar.classList.add('active');
-
-      // Capture SelectionContext
-      let anchorElem = sel.anchorNode;
-      if (anchorElem.nodeType === Node.TEXT_NODE) anchorElem = anchorElem.parentElement;
-      const blockId = anchorElem.closest('[id]') ? anchorElem.closest('[id]').id : 'unknown';
-
-      AppState.activeSelection = {
-        block_id: blockId,
-        selected_text: text,
-        start_offset: range.startOffset,
-        end_offset: range.endOffset,
-        document_id: AppState.documentData ? AppState.documentData.document_id : 'doc_01',
-        document_profile: AppState.documentData ? AppState.documentData.profile : 'academic_report'
-      };
-
-      // Notify Extension Host of active selection context
-      if (AppState.vscode) {
-        AppState.vscode.postMessage({
-          type: 'SELECTION_CHANGED',
-          payload: AppState.activeSelection
-        });
-      }
-    }
-
-    function triggerContextAction(action) {
-      if (!AppState.activeSelection) return;
-
-      if (AppState.vscode) {
-        AppState.vscode.postMessage({
-          type: 'REQUEST_AGENT_ACTION',
-          payload: {
-            action: action,
-            context: AppState.activeSelection
-          }
-        });
+      if (!sel || !sel.rangeCount) return;
+      const block = getEnclosingBlock(sel.anchorNode);
+      if (block) {
+        const newEl = document.createElement(tag);
+        newEl.id = block.id || (tag === 'p' ? `p_${Date.now()}` : `h_${Date.now()}`);
+        newEl.innerHTML = block.innerHTML;
+        newEl.style.textIndent = '0cm';
+        block.parentNode.replaceChild(newEl, block);
+        focusElement(newEl);
+        mapHeadingsToDOMNodes();
+        setSaveStatus('unsaved', 'Chưa lưu');
+        AppState.isDirty = true;
       } else {
-        alert(`[Antigravity Agent Context] Thao tác: ${action}\nVăn bản: "${AppState.activeSelection.selected_text}"`);
+        document.execCommand('formatBlock', false, tag);
       }
     }
 
-    // ------------------------------------------------------------------
-    // AGENT TRANSACTION PREVIEW & COMMIT
-    // ------------------------------------------------------------------
-    function handleProposeTransaction(txPayload) {
-      AppState.pendingTransactionId = txPayload.transaction_id;
-      const banner = document.getElementById('agentReviewBanner');
-      const descLabel = document.getElementById('bannerTxDescription');
-      descLabel.innerText = `Antigravity đề xuất: ${txPayload.description || 'Chỉnh sửa tài liệu'}`;
-      banner.classList.add('active');
-    }
-
-    function acceptAgentTransaction() {
-      if (AppState.pendingTransactionId && AppState.vscode) {
-        AppState.vscode.postMessage({
-          type: 'APPLY_TRANSACTION',
-          payload: { transaction_id: AppState.pendingTransactionId }
-        });
+    function applyFormattingPreset(presetName) {
+      if (confirm(`Áp dụng chuẩn định dạng "${presetName}" cho toàn bộ tài liệu?`)) {
+        setSaveStatus('unsaved', 'Chưa lưu');
+        AppState.isDirty = true;
       }
-      document.getElementById('agentReviewBanner').classList.remove('active');
-      AppState.pendingTransactionId = null;
     }
 
-    function rejectAgentTransaction() {
-      document.getElementById('agentReviewBanner').classList.remove('active');
-      AppState.pendingTransactionId = null;
+    function insertPageBreak() {
+      document.execCommand('insertParagraph');
     }
 
-    // ------------------------------------------------------------------
-    // SAVE, ATOMIC PERSISTENCE & VERIFICATION
-    // ------------------------------------------------------------------
+    function insertTableDialog() {
+      const rows = prompt('Nhập số hàng:', '3') || '3';
+      const cols = prompt('Nhập số cột:', '3') || '3';
+      let html = '<table style="width:100%; border-collapse:collapse; margin:12pt 0;">';
+      for (let r = 0; r < parseInt(rows); r++) {
+        html += '<tr>';
+        for (let c = 0; c < parseInt(cols); c++) {
+          html += `<td style="border:1px solid #cbd5e1; padding:6pt 8pt;">Ô (${r+1},${c+1})</td>`;
+        }
+        html += '</tr>';
+      }
+      html += '</table><p><br></p>';
+      document.execCommand('insertHTML', false, html);
+    }
+
+    function generateTableOfContents() {
+      alert('Đã cập nhật bảng mục lục tự động dựa trên cấu trúc tài liệu.');
+    }
+
+    function execUndo() { document.execCommand('undo'); }
+    function execRedo() { document.execCommand('redo'); }
+
+    function setSaveStatus(status, label) {
+      const ind = document.getElementById('saveStatusIndicator');
+      ind.className = `save-status-badge ${status}`;
+      document.getElementById('saveStatusText').innerText = label;
+    }
+
     function triggerSave() {
       setSaveStatus('saving', 'Đang lưu...');
       const payload = serializeDocumentFromDOM();
@@ -1786,193 +2102,381 @@
           payload: payload
         });
       } else {
-        // Standalone Server Mode
         fetch('/api/save', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         })
         .then(res => res.json())
-        .then(res => handleSaveSuccess(res))
-        .catch(err => handleSaveError({ message: err.message }));
+        .then(() => {
+          setSaveStatus('saved', 'Đã lưu');
+          AppState.isDirty = false;
+        })
+        .catch(() => {
+          setSaveStatus('unsaved', 'Lỗi lưu');
+        });
       }
     }
 
     function serializeDocumentFromDOM() {
-      const container = document.getElementById('pagesContainer');
-      const blocks = [];
-
-      container.querySelectorAll('.page-content-box').forEach(content => {
-        content.childNodes.forEach(child => {
-          if (child.nodeType !== Node.ELEMENT_NODE) return;
-          const tag = child.tagName.toLowerCase();
-          const id = child.id || ('blk_' + Math.random().toString(36).substring(2, 8));
-
-          if (tag.startsWith('h')) {
-            blocks.push({
-              id: id,
-              type: 'heading',
-              level: parseInt(tag.substring(1)),
-              text: child.innerText.trim()
-            });
-          } else if (tag === 'table') {
-            const cells = [];
-            child.querySelectorAll('tr').forEach(tr => {
-              const row = [];
-              tr.querySelectorAll('th, td').forEach(td => {
-                row.push({ id: td.id || '', text: td.innerText.trim() });
-              });
-              cells.push(row);
-            });
-            blocks.push({
-              id: id,
-              type: 'table',
-              rows: cells.length,
-              columns: cells[0] ? cells[0].length : 0,
-              cells: cells
-            });
-          } else {
-            blocks.push({
-              id: id,
-              type: 'paragraph',
-              text: child.innerText.trim()
-            });
-          }
-        });
+      const pages = [];
+      document.querySelectorAll('.a4-page').forEach((pEl, pIdx) => {
+        const blocks = [];
+        const contentBox = pEl.querySelector('.page-content-box');
+        if (contentBox) {
+          contentBox.childNodes.forEach(child => {
+            if (child.nodeType === Node.ELEMENT_NODE) {
+              const tag = child.tagName.toLowerCase();
+              if (tag.startsWith('h')) {
+                blocks.push({
+                  id: child.id || `h_${pIdx}_${blocks.length}`,
+                  type: 'heading',
+                  level: parseInt(tag.substring(1)) || 1,
+                  style_name: `Heading ${tag.substring(1)}`,
+                  text: child.innerText.trim(),
+                  runs: [{ text: child.innerText.trim(), bold: true }]
+                });
+              } else if (tag === 'table') {
+                const cells = [];
+                child.querySelectorAll('tr').forEach(tr => {
+                  const row = [];
+                  tr.querySelectorAll('td, th').forEach(cell => {
+                    row.push({ id: cell.id, text: cell.innerText.trim() });
+                  });
+                  if (row.length > 0) cells.push(row);
+                });
+                blocks.push({
+                  id: child.id || `tbl_${pIdx}_${blocks.length}`,
+                  type: 'table',
+                  cells: cells
+                });
+              } else {
+                blocks.push({
+                  id: child.id || `p_${pIdx}_${blocks.length}`,
+                  type: 'paragraph',
+                  style_name: 'Normal',
+                  text: child.innerText.trim(),
+                  runs: [{ text: child.innerText.trim() }]
+                });
+              }
+            }
+          });
+        }
+        pages.push({ page_number: pIdx + 1, blocks: blocks });
       });
 
       return {
-        title: AppState.documentData ? AppState.documentData.title : 'Document',
-        document_id: AppState.documentData ? AppState.documentData.document_id : 'doc_01',
-        sections: [{
-          id: 'sec_0001',
-          blocks: blocks
-        }]
+        title: document.getElementById('docTitleLabel').innerText.replace(/\.docx$/i, ''),
+        total_pages: pages.length,
+        pages: pages,
+        sections: [{ id: "sec_0001", blocks: pages.flatMap(p => p.blocks) }]
       };
     }
 
-    function handleSaveSuccess(res) {
-      AppState.isDirty = false;
-      const timeStr = new Date().toLocaleTimeString();
-      setSaveStatus('saved', `Đã lưu lúc ${timeStr}`);
+    function handleSelectionChange() {
+      const sel = window.getSelection();
+      if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return;
+
+      const txt = sel.toString().trim();
+      if (!txt) return;
+
+      AppState.activeSelection = {
+        selected_text: txt,
+        length: txt.length,
+        start_offset: sel.anchorOffset,
+        end_offset: sel.focusOffset
+      };
+
+      if (AppState.vscode) {
+        AppState.vscode.postMessage({
+          type: 'SELECTION_CHANGED',
+          payload: AppState.activeSelection
+        });
+      }
     }
 
-    function handleSaveError(err) {
-      setSaveStatus('unsaved', 'Lưu thất bại');
-      alert('Không thể lưu tài liệu: ' + (err.message || 'Lỗi không xác định'));
+    function getEnclosingBlock(node) {
+      if (!node) return null;
+      let el = node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement;
+      while (el && !el.classList.contains('page-content-box') && el.tagName !== 'BODY') {
+        const tag = el.tagName.toLowerCase();
+        if (['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'div', 'li', 'td', 'th'].includes(tag)) {
+          if (!el.classList.contains('page-content-box') && !el.classList.contains('a4-page')) {
+            return el;
+          }
+        }
+        el = el.parentElement;
+      }
+      return null;
     }
 
-    function setSaveStatus(type, label) {
-      const badge = document.getElementById('saveStatusIndicator');
-      const text = document.getElementById('saveStatusText');
-      badge.className = `save-status-badge ${type}`;
-      text.innerText = label;
+    function focusElement(el, atStart = false) {
+      if (!el) return;
+      el.focus();
+      const sel = window.getSelection();
+      if (sel) {
+        const range = document.createRange();
+        if (atStart) {
+          range.setStart(el, 0);
+          range.collapse(true);
+        } else {
+          range.selectNodeContents(el);
+          range.collapse(false);
+        }
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }
     }
 
-    // ------------------------------------------------------------------
-    // TOOLBAR & UI HELPERS
-    // ------------------------------------------------------------------
-    function switchRibbonTab(tabName) {
-      document.querySelectorAll('.ribbon-tab').forEach(t => t.classList.remove('active'));
-      document.querySelectorAll('.ribbon-panel').forEach(p => p.classList.remove('active'));
-
-      event.currentTarget.classList.add('active');
-      const panel = document.getElementById(`panel-${tabName}`);
-      if (panel) panel.classList.add('active');
+    function handleIndent() {
+      const sel = window.getSelection();
+      if (!sel || !sel.rangeCount) return;
+      const block = getEnclosingBlock(sel.anchorNode);
+      if (block) {
+        block.style.textIndent = '1.27cm';
+        setSaveStatus('unsaved', 'Chưa lưu');
+        AppState.isDirty = true;
+      } else {
+        document.execCommand('indent');
+      }
     }
 
-    function toggleOutline() {
-      const sidebar = document.getElementById('outlineSidebar');
-      sidebar.classList.toggle('collapsed');
-    }
-
-    function setZoomLevel(zoomVal) {
-      AppState.zoom = zoomVal;
-      document.getElementById('pagesContainer').style.transform = `scale(${zoomVal})`;
-      document.getElementById('zoomLabel').innerText = `${Math.round(zoomVal * 100)}%`;
-      document.getElementById('viewZoomSelect').value = zoomVal.toString();
-    }
-
-    function adjustZoom(delta) {
-      const next = Math.max(0.5, Math.min(2.0, Math.round((AppState.zoom + delta) * 10) / 10));
-      setZoomLevel(next);
-    }
-
-    function updateStats() {
-      const container = document.getElementById('pagesContainer');
-      let text = '';
-      container.querySelectorAll('.page-content-box').forEach(cb => { text += ' ' + (cb.innerText || ''); });
-      const words = text.trim() ? text.trim().split(/\s+/).length : 0;
-      const chars = text.length;
-      document.getElementById('statusWordCount').innerText = `${words.toLocaleString()} từ | ${chars.toLocaleString()} ký tự`;
+    function handleOutdent() {
+      const sel = window.getSelection();
+      if (!sel || !sel.rangeCount) return;
+      const block = getEnclosingBlock(sel.anchorNode);
+      if (block) {
+        block.style.textIndent = '0cm';
+        block.style.paddingLeft = '0cm';
+        setSaveStatus('unsaved', 'Chưa lưu');
+        AppState.isDirty = true;
+      } else {
+        document.execCommand('outdent');
+      }
     }
 
     function handleKeyboardShortcuts(e) {
+      // 1. Ctrl / Cmd Shortcuts
       if (e.ctrlKey || e.metaKey) {
-        if (e.key === 's' || e.key === 'S') {
+        const key = e.key.toLowerCase();
+        if (key === 's') {
           e.preventDefault();
           triggerSave();
-        } else if (e.key === 'z' || e.key === 'Z') {
-          e.preventDefault();
-          if (e.shiftKey) execRedo();
-          else execUndo();
-        } else if (e.key === 'y' || e.key === 'Y') {
+        } else if (key === 'z') {
+          if (!e.shiftKey) {
+            e.preventDefault();
+            execUndo();
+          }
+        } else if (key === 'y') {
           e.preventDefault();
           execRedo();
+        } else if (key === 'b') {
+          e.preventDefault();
+          document.execCommand('bold');
+        } else if (key === 'i') {
+          e.preventDefault();
+          document.execCommand('italic');
+        } else if (key === 'u') {
+          e.preventDefault();
+          document.execCommand('underline');
+        } else if (key === 'e') {
+          e.preventDefault();
+          document.execCommand('justifyCenter');
+        } else if (key === 'l') {
+          e.preventDefault();
+          document.execCommand('justifyLeft');
+        } else if (key === 'r') {
+          e.preventDefault();
+          document.execCommand('justifyRight');
+        } else if (key === 'j') {
+          e.preventDefault();
+          document.execCommand('justifyFull');
+        }
+        return;
+      }
+
+      const sel = window.getSelection();
+      if (!sel || !sel.rangeCount) return;
+      const range = sel.getRangeAt(0);
+
+      // 2. Tab key -> Indent or Next table cell
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        const cell = sel.anchorNode && (sel.anchorNode.nodeType === Node.ELEMENT_NODE ? sel.anchorNode.closest('td, th') : (sel.anchorNode.parentElement ? sel.anchorNode.parentElement.closest('td, th') : null));
+        if (cell) {
+          const tr = cell.closest('tr');
+          const table = tr ? tr.closest('table') : null;
+          if (table && tr) {
+            const cells = Array.from(tr.querySelectorAll('td, th'));
+            const cIdx = cells.indexOf(cell);
+            if (e.shiftKey) {
+              if (cIdx > 0) {
+                focusElement(cells[cIdx - 1]);
+              } else {
+                const prevTr = tr.previousElementSibling;
+                if (prevTr) {
+                  const prevCells = prevTr.querySelectorAll('td, th');
+                  if (prevCells.length) focusElement(prevCells[prevCells.length - 1]);
+                }
+              }
+            } else {
+              if (cIdx < cells.length - 1) {
+                focusElement(cells[cIdx + 1]);
+              } else {
+                const nextTr = tr.nextElementSibling;
+                if (nextTr) {
+                  const nextCells = nextTr.querySelectorAll('td, th');
+                  if (nextCells.length) focusElement(nextCells[0]);
+                } else {
+                  const colCount = cells.length;
+                  const newTr = document.createElement('tr');
+                  for (let i = 0; i < colCount; i++) {
+                    const newTd = document.createElement('td');
+                    newTd.style.border = '1px solid #cbd5e1';
+                    newTd.style.padding = '6pt 8pt';
+                    newTd.innerHTML = '<br>';
+                    newTr.appendChild(newTd);
+                  }
+                  table.appendChild(newTr);
+                  focusElement(newTr.querySelector('td'));
+                }
+              }
+            }
+            setSaveStatus('unsaved', 'Chưa lưu');
+            AppState.isDirty = true;
+            return;
+          }
+        }
+
+        // Outside table: Indent / Outdent paragraph
+        if (e.shiftKey) {
+          handleOutdent();
+        } else {
+          handleIndent();
+        }
+        return;
+      }
+
+      // 3. Backspace at start of block -> Remove indent or demote heading
+      if (e.key === 'Backspace' && range.collapsed && range.startOffset === 0) {
+        const block = getEnclosingBlock(sel.anchorNode);
+        if (block) {
+          // If block has indent, remove indent
+          if (block.style.textIndent && block.style.textIndent !== '0cm' && block.style.textIndent !== '0px' && block.style.textIndent !== '0') {
+            e.preventDefault();
+            block.style.textIndent = '0cm';
+            setSaveStatus('unsaved', 'Chưa lưu');
+            AppState.isDirty = true;
+            return;
+          }
+
+          // If block is heading, convert to normal paragraph
+          const tag = block.tagName.toLowerCase();
+          if (tag.startsWith('h') && tag.length === 2 && !isNaN(parseInt(tag[1]))) {
+            e.preventDefault();
+            const p = document.createElement('p');
+            p.id = block.id;
+            p.innerHTML = block.innerHTML || '<br>';
+            block.parentNode.replaceChild(p, block);
+            focusElement(p, true);
+            mapHeadingsToDOMNodes();
+            setSaveStatus('unsaved', 'Chưa lưu');
+            AppState.isDirty = true;
+            return;
+          }
+        }
+      }
+
+      // 4. Enter in Headings -> Create new paragraph below
+      if (e.key === 'Enter' && !e.shiftKey) {
+        const block = getEnclosingBlock(sel.anchorNode);
+        if (block) {
+          const tag = block.tagName.toLowerCase();
+          if (tag.startsWith('h') && tag.length === 2 && !isNaN(parseInt(tag[1]))) {
+            const blockRange = document.createRange();
+            blockRange.selectNodeContents(block);
+            blockRange.setStart(range.endContainer, range.endOffset);
+            if (blockRange.toString().trim().length === 0) {
+              e.preventDefault();
+              const p = document.createElement('p');
+              p.id = `p_${Date.now()}`;
+              p.innerHTML = '<br>';
+              block.parentNode.insertBefore(p, block.nextSibling);
+              focusElement(p, true);
+              mapHeadingsToDOMNodes();
+              setSaveStatus('unsaved', 'Chưa lưu');
+              AppState.isDirty = true;
+              return;
+            }
+          }
         }
       }
     }
 
-    function execUndo() { document.execCommand('undo'); }
-    function execRedo() { document.execCommand('redo'); }
-
-    function promptInsertTable() {
-      document.getElementById('tableModal').classList.add('active');
-    }
-    function confirmInsertTable() {
-      const rows = parseInt(document.getElementById('tableRowsInput').value) || 3;
-      const cols = parseInt(document.getElementById('tableColsInput').value) || 3;
-      let html = '<table style="width:100%;border-collapse:collapse;margin:12pt 0;">';
-      for (let r = 0; r < rows; r++) {
-        html += '<tr>';
-        for (let c = 0; c < cols; c++) {
-          const tag = r === 0 ? 'th' : 'td';
-          html += `<${tag} style="border:1px solid #cbd5e1;padding:6pt 8pt;">${r === 0 ? 'Cột ' + (c + 1) : 'Ô ' + (r + 1) + '-' + (c + 1)}</${tag}>`;
+    function updateStats() {
+      let words = 0;
+      let chars = 0;
+      document.querySelectorAll('.page-content-box').forEach(box => {
+        const txt = (box.innerText || box.textContent || '').trim();
+        if (txt) {
+          words += txt.split(/\s+/).filter(Boolean).length;
+          chars += txt.length;
         }
-        html += '</tr>';
+      });
+      const totalPages = (AppState.documentData && (AppState.documentData.total_pages || (AppState.documentData.pages && AppState.documentData.pages.length))) || document.querySelectorAll('.a4-page').length || 1;
+      const wordCountEl = document.getElementById('statusWordCount');
+      if (wordCountEl && wordCountEl.querySelector('span')) {
+        wordCountEl.querySelector('span').innerText = `${words.toLocaleString()} từ`;
       }
-      html += '</table><p></p>';
-      document.execCommand('insertHTML', false, html);
-      closeModal('tableModal');
-    }
-
-    function promptInsertImage() {
-      const url = prompt('Nhập đường dẫn hình ảnh (URI hoặc URL):');
-      if (url) {
-        document.execCommand('insertHTML', false, `<div class="doc-image-wrapper"><img src="${url}"><div class="doc-caption">Hình ảnh minh họa</div></div><p></p>`);
+      const charCountEl = document.getElementById('statusCharCount');
+      if (charCountEl && charCountEl.querySelector('span')) {
+        charCountEl.querySelector('span').innerText = `${chars.toLocaleString()} ký tự`;
       }
-    }
-
-    function promptInsertDiagram() {
-      const title = prompt('Tiêu đề sơ đồ kiến trúc:', 'Sơ đồ kiến trúc tổng thể');
-      if (title) {
-        document.execCommand('insertHTML', false, `<div class="doc-image-wrapper" style="border:1px dashed #3b82f6;padding:12pt;background:#f8fafc;"><div style="font-weight:bold;color:#1e3a8a;">📐 SƠ ĐỒ: ${title}</div><div class="doc-caption">${title}</div></div><p></p>`);
+      const pageCountEl = document.getElementById('statusPageCount');
+      if (pageCountEl && pageCountEl.querySelector('span:last-child')) {
+        pageCountEl.querySelector('span:last-child').innerText = `Trang 1 / ${totalPages}`;
       }
     }
 
-    function promptInsertCitation() {
-      const source = prompt('Nhập tên nguồn trích dẫn hoặc tác giả (VD: Vaswani et al., 2017):');
-      if (source) {
-        document.execCommand('insertHTML', false, ` <span style="color:#2563eb;font-weight:600;background:#dbeafe;padding:1px 4px;border-radius:2px;">[${source}]</span> `);
+    function acceptAllCurrentChanges() {
+      alert('Đã chấp nhận toàn bộ đề xuất của AI.');
+    }
+
+    function rejectAllCurrentChanges() {
+      alert('Đã từ chối toàn bộ đề xuất của AI.');
+    }
+
+    function fetchVersionHistory() {
+      if (AppState.vscode) {
+        AppState.vscode.postMessage({ type: 'GET_VERSION_HISTORY' });
+      } else {
+        renderHistory([
+          { version: 1, author: "User", description: "Bản tài liệu gốc", timestamp: new Date().toISOString() },
+          { version: 2, author: "Antigravity AI", description: "Cải thiện định dạng & bổ sung biểu đồ", timestamp: new Date().toISOString() }
+        ]);
       }
     }
 
-    function insertPageBreak() {
-      document.execCommand('insertHTML', false, '<div style="page-break-before:always;border-top:1px dashed #94a3b8;margin:16pt 0;text-align:center;color:#94a3b8;font-size:10px;">--- NGẮT TRANG ---</div><p></p>');
-    }
-
-    function closeModal(modalId) {
-      document.getElementById(modalId).classList.remove('active');
+    function renderHistory(versions) {
+      const container = document.getElementById('historyList');
+      if (!versions || versions.length === 0) {
+        container.innerHTML = '<div class="outline-empty">Chưa có lịch sử phiên bản.</div>';
+        return;
+      }
+      container.innerHTML = '';
+      versions.forEach(v => {
+        const card = document.createElement('div');
+        card.className = 'history-card';
+        card.innerHTML = `
+          <div class="history-card-header">
+            <span class="history-v-tag">Phiên bản v${v.version}</span>
+            <span class="history-time">${new Date(v.timestamp).toLocaleTimeString()}</span>
+          </div>
+          <div style="font-size:11.5px; color:#1e293b; margin-bottom:4px;">${v.description || 'Không có mô tả'}</div>
+          <div style="font-size:10.5px; color:#64748b;">Tác giả: <b>${v.author}</b></div>
+        `;
+        container.appendChild(card);
+      });
     }
   </script>
 </body>

@@ -151,30 +151,67 @@ class DocumentModel:
 
     def get_outline(self) -> List[Dict[str, Any]]:
         """Extracts document heading outline."""
+        import re
         outline = []
         for idx, p in enumerate(self.doc.paragraphs):
             style_name = p.style.name if p.style else ""
-            if "Heading" in style_name or "heading" in style_name.lower() or style_name in ["Title", "Subtitle"]:
+            s_lower = style_name.lower().strip()
+            p_text = normalize_unicode(p.text).strip()
+            if not p_text:
+                continue
+
+            if s_lower in ("toc heading", "tiêu đề mục lục"):
+                continue
+
+            is_heading = False
+            level = 1
+            if s_lower in ("title", "tựa đề"):
+                is_heading = True
+                level = 0
+            elif s_lower in ("subtitle", "phụ đề"):
+                is_heading = True
                 level = 1
-                if "1" in style_name:
-                    level = 1
-                elif "2" in style_name:
-                    level = 2
-                elif "3" in style_name:
-                    level = 3
-                elif "4" in style_name:
-                    level = 4
-                elif style_name == "Title":
-                    level = 0
-                elif style_name == "Subtitle":
-                    level = 1
+            elif s_lower.startswith("heading") or s_lower.startswith("tiêu đề") or s_lower.startswith("tieu de"):
+                is_heading = True
+                digits = "".join(filter(str.isdigit, style_name))
+                level = int(digits) if digits else 1
+            else:
+                # Check XML outline level
+                p_pr = p._element.pPr if hasattr(p, "_element") and p._element is not None else None
+                if p_pr is not None:
+                    from docx.oxml.ns import qn
+                    outline_lvl = p_pr.find(qn("w:outlineLvl"))
+                    if outline_lvl is not None:
+                        val = outline_lvl.get(qn("w:val"))
+                        if val is not None and val.isdigit() and 0 <= int(val) <= 8:
+                            is_heading = True
+                            level = int(val) + 1
+
+                # Check regex numbering heuristics for unstyled paragraphs
+                if not is_heading and len(p_text) <= 250:
+                    is_bold = any(r.bold for r in p.runs) if hasattr(p, "runs") and p.runs else False
+                    if re.match(r"^(CHƯƠNG|PHẦN|BÀI\s+HỌC|PHỤ\s+LỤC|CHAPTER|SECTION|PART)\s+[0-9IVXLCDM]+", p_text, re.IGNORECASE):
+                        is_heading = True
+                        level = 1
+                    elif re.match(r"^(MỤC|BÀI\s+TẬP|CÂU\s+HỎI|CÂU|BÀI|LESSON)\s+\d+", p_text, re.IGNORECASE):
+                        is_heading = True
+                        level = 2
+                    elif re.match(r"^[0-9IVXLCDM]+\.\s+\S+", p_text) and (is_bold or len(p_text) < 100):
+                        is_heading = True
+                        level = 1
+                    elif re.match(r"^\d+\.\d+(\.\d+)?\s+\S+", p_text) and (is_bold or len(p_text) < 100):
+                        dots = p_text.split()[0].count(".")
+                        is_heading = True
+                        level = min(dots + 1, 4)
+
+            if is_heading:
                 outline.append(
                     {
                         "id": f"p_{idx + 1:04d}",
                         "index": idx,
-                        "style": style_name,
+                        "style": style_name or f"Heading {level}",
                         "level": level,
-                        "text": normalize_unicode(p.text).strip(),
+                        "text": p_text,
                     }
                 )
         return outline

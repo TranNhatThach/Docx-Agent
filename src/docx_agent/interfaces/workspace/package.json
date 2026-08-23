@@ -1,0 +1,45 @@
+{
+  "name": "docx-agent-vscode",
+  "displayName": "Docx-Agent: AI-Native Document Workspace",
+  "description": "Visual A4 document editor and AI coding agent collaborator for Microsoft Word (.docx)",
+  "version": "2.0.0",
+  "publisher": "TranNhatThach",
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Other",
+    "Programming Languages",
+    "Formatters"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "customEditors": [
+      {
+        "viewType": "docxAgent.visualEditor",
+        "displayName": "Docx-Agent Visual Workspace",
+        "selector": [
+          {
+            "filenamePattern": "*.docx"
+          }
+        ],
+        "priority": "default"
+      }
+    ],
+    "commands": [
+      {
+        "command": "docxAgent.openWorkspace",
+        "title": "Docx-Agent: Open in Visual Workspace"
+      }
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "when": "resourceExtname == .docx",
+          "command": "docxAgent.openWorkspace",
+          "group": "navigation"
+        }
+      ]
+    }
+  }
+}
