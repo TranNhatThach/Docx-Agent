@@ -45,7 +45,8 @@ class ClarificationEngine:
         ins_lower = instruction.strip().lower()
 
         # Case 1: Generic rewrite request ("viết lại đoạn này", "rewrite this", "improve this")
-        if any(ins_lower == phrase for phrase in ["viết lại", "viết lại đoạn này", "rewrite", "rewrite this", "chỉnh sửa đoạn này", "làm hay hơn"]):
+        rewrite_triggers = ["viết lại", "rewrite", "chỉnh sửa đoạn", "làm hay hơn", "cải thiện đoạn", "tối ưu đoạn"]
+        if any(phrase in ins_lower for phrase in rewrite_triggers):
             req = ClarificationRequest(
                 question="Bạn muốn viết lại đoạn văn này theo phong cách nào?",
                 confidence=AgentConfidence.LOW,
@@ -73,8 +74,9 @@ class ClarificationEngine:
             )
             return AgentConfidence.LOW, req
 
-        # Case 2: Generic image/diagram request ("thêm hình", "thêm diagram", "add image")
-        if any(ins_lower == phrase for phrase in ["thêm hình", "thêm hình minh họa", "add image", "thêm diagram", "vẽ hình"]):
+        # Case 2: Generic image/diagram request ("thêm hình", "thêm diagram", "vẽ sơ đồ", "add image")
+        diagram_triggers = ["thêm hình", "thêm diagram", "vẽ hình", "vẽ sơ đồ", "tạo sơ đồ", "tạo lưu đồ", "add image", "create diagram"]
+        if any(phrase in ins_lower for phrase in diagram_triggers):
             req = ClarificationRequest(
                 question="Bạn muốn chèn loại hình minh họa nào cho phần này?",
                 confidence=AgentConfidence.LOW,

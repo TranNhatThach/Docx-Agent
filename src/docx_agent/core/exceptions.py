@@ -124,3 +124,74 @@ class TransactionError(DocxAgentError):
             details={"step": step, "original_error": str(original_error) if original_error else None},
             suggestion="Check document write permissions and ensure no other process has locked the file."
         )
+
+
+class InvalidOperationError(DocxAgentError):
+    def __init__(self, message: str, operation_name: str = "operation"):
+        super().__init__(
+            message=f"Invalid operation '{operation_name}': {message}",
+            code=ErrorCode.INVALID_OPERATION,
+            details={"operation": operation_name},
+            suggestion="Verify operation arguments and target element type before execution."
+        )
+
+
+class FormatError(DocxAgentError):
+    def __init__(self, property_name: str, value: Any, message: str):
+        super().__init__(
+            message=f"Formatting error for property '{property_name}' with value '{value}': {message}",
+            code=ErrorCode.FORMAT_ERROR,
+            details={"property": property_name, "value": str(value), "error": message},
+            suggestion="Ensure formatting value is within supported type and range constraints."
+        )
+
+
+class TableError(DocxAgentError):
+    def __init__(self, message: str, table_id: Optional[str] = None):
+        super().__init__(
+            message=f"Table error{' for ' + table_id if table_id else ''}: {message}",
+            code=ErrorCode.TABLE_ERROR,
+            details={"table_id": table_id},
+            suggestion="Check table dimensions, cell boundaries, and grid spans."
+        )
+
+
+class ImageError(DocxAgentError):
+    def __init__(self, message: str, image_path: Optional[str] = None):
+        super().__init__(
+            message=f"Image processing error{' for ' + image_path if image_path else ''}: {message}",
+            code=ErrorCode.IMAGE_ERROR,
+            details={"image_path": image_path},
+            suggestion="Ensure the image exists, is in supported format (PNG/JPEG/SVG), and has valid dimensions."
+        )
+
+
+class RollbackFailedError(DocxAgentError):
+    def __init__(self, message: str, backup_path: Optional[str] = None):
+        super().__init__(
+            message=f"Transaction rollback failed: {message}",
+            code=ErrorCode.ROLLBACK_FAILED,
+            details={"backup_path": backup_path},
+            suggestion="Manual recovery from backup file may be required."
+        )
+
+
+class PresetNotFoundError(DocxAgentError):
+    def __init__(self, preset_name: str):
+        super().__init__(
+            message=f"Document preset profile not found: '{preset_name}'",
+            code=ErrorCode.PRESET_NOT_FOUND,
+            details={"preset_name": preset_name},
+            suggestion="Check available presets using 'docx-agent presets list'."
+        )
+
+
+class UnsupportedElementError(DocxAgentError):
+    def __init__(self, element_tag: str, message: str = "Element is preserved in unsupported raw model."):
+        super().__init__(
+            message=f"Unsupported OOXML element <{element_tag}>: {message}",
+            code=ErrorCode.UNSUPPORTED_ELEMENT,
+            details={"tag": element_tag},
+            suggestion="Element will be preserved intact during roundtrip export."
+        )
+

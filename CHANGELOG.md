@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.1.0] - 2026-08-23
+
+### Added
+- **High-Fidelity DOCX-Native Binary Rendering**: Integrated direct OpenXML binary streaming (`docx-preview` + `JSZip`) with in-place live editing (`contentEditable`).
+- **Word-Accurate DirectWrite Layout Engine**: Multi-line table cell calculation (Consolas 10pt SQL blocks, Times New Roman eval boxes) matching Microsoft Word page counts 1:1 (66-67 pages on 70-question reports).
+- **Centralized Configuration**: `core/config.py` with typed Pydantic `Settings` and `.env.example`.
+- **DevOps Observability**: `docx-agent health` and `docx-agent version` CLI commands.
+- **Enterprise CI/CD & Community Tooling**: Matrix testing workflows (`ci.yml`), automated release pipeline (`release.yml`), security audit (`security.yml`), `CODEOWNERS`, `PULL_REQUEST_TEMPLATE.md`, `ISSUE_TEMPLATE/`, `dependabot.yml`.
+- **Architectural Decision Records (ADR)**: `docs/adr/ADR-0001` through `ADR-0004` and `docs/technical-debt.md`.
+
+### Fixed
+- **Paragraph & Heading Alignment**: Resolved enum string serialization bug producing invalid CSS values (`center (1)`), normalizing to clean `left`, `center`, `right`, `justify`.
+- **Cover Page Multiline Wrapping**: Enforced `white-space: pre-wrap` preventing university title and metadata collapse.
+- **Table Code Block & Evaluation Styling**: Rendered Consolas monospace styling with blue `#0284C7` and green `#16A34A` left borders.
+- **Windows File Lock Recovery**: Graceful handling when Microsoft Word holds lock on destination files.
+
+---
+
 ## [2.0.0] - 2026-08-23
 
 ### Major Architecture Upgrade: AI-Native Document Workspace

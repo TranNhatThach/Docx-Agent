@@ -1,0 +1,17 @@
+# Global Code Owners for Docx-Agent Project
+* @TranNhatThach
+
+# Core Canonical Model & Operations Engine
+/src/docx_agent/canonical/ @TranNhatThach
+/src/docx_agent/engine/    @TranNhatThach
+/src/docx_agent/adapters/  @TranNhatThach
+
+# Interfaces & Workspace
+/src/docx_agent/interfaces/ @TranNhatThach
+/extensions/vscode/         @TranNhatThach
+
+# CI/CD & DevOps
+/.github/workflows/ @TranNhatThach
+
+# Documentation & Architecture Decisions
+/docs/ @TranNhatThach

@@ -1,0 +1,869 @@
+[
+  {
+    "phase": 1,
+    "phase_name": "Real DOCX Loading & State Machine",
+    "timestamp": "2026-08-23T09:26:43Z",
+    "status": "VERIFIED",
+    "fixtures_tested": [
+      {
+        "fixture": "simple.docx",
+        "exists": true,
+        "load_start": 1787477203.4682899,
+        "status": "SUCCESS",
+        "state_reached": "READY",
+        "duration_ms": 44.09,
+        "document_id": "doc_77b93b97",
+        "title": "simple",
+        "sections_count": 1,
+        "headings_count": 1,
+        "stats": {
+          "paragraphs_count": 3,
+          "tables_count": 0,
+          "sections_count": 1,
+          "headings_count": 1,
+          "words_count": 24,
+          "chars_count": 106,
+          "load_time_ms": 44.06
+        },
+        "blocks_count": 3,
+        "has_headings": true,
+        "has_tables": false,
+        "has_images": false,
+        "has_unsupported": false
+      },
+      {
+        "fixture": "Vietnamese.docx",
+        "exists": true,
+        "load_start": 1787477203.512452,
+        "status": "SUCCESS",
+        "state_reached": "READY",
+        "duration_ms": 40.35,
+        "document_id": "doc_f8bff645",
+        "title": "Vietnamese",
+        "sections_count": 1,
+        "headings_count": 3,
+        "stats": {
+          "paragraphs_count": 7,
+          "tables_count": 0,
+          "sections_count": 1,
+          "headings_count": 3,
+          "words_count": 165,
+          "chars_count": 762,
+          "load_time_ms": 40.31
+        },
+        "blocks_count": 7,
+        "has_headings": true,
+        "has_tables": false,
+        "has_images": false,
+        "has_unsupported": false
+      },
+      {
+        "fixture": "academic_report.docx",
+        "exists": true,
+        "load_start": 1787477203.5528932,
+        "status": "SUCCESS",
+        "state_reached": "READY",
+        "duration_ms": 48.26,
+        "document_id": "doc_0b806b53",
+        "title": "academic_report",
+        "sections_count": 1,
+        "headings_count": 4,
+        "stats": {
+          "paragraphs_count": 8,
+          "tables_count": 1,
+          "sections_count": 1,
+          "headings_count": 4,
+          "words_count": 184,
+          "chars_count": 948,
+          "load_time_ms": 48.21
+        },
+        "blocks_count": 9,
+        "has_headings": true,
+        "has_tables": true,
+        "has_images": false,
+        "has_unsupported": false
+      },
+      {
+        "fixture": "tables.docx",
+        "exists": true,
+        "load_start": 1787477203.6012332,
+        "status": "SUCCESS",
+        "state_reached": "READY",
+        "duration_ms": 37.76,
+        "document_id": "doc_17f11c22",
+        "title": "tables",
+        "sections_count": 1,
+        "headings_count": 1,
+        "stats": {
+          "paragraphs_count": 2,
+          "tables_count": 1,
+          "sections_count": 1,
+          "headings_count": 1,
+          "words_count": 56,
+          "chars_count": 245,
+          "load_time_ms": 37.72
+        },
+        "blocks_count": 3,
+        "has_headings": true,
+        "has_tables": true,
+        "has_images": false,
+        "has_unsupported": false
+      },
+      {
+        "fixture": "images.docx",
+        "exists": true,
+        "load_start": 1787477203.6390707,
+        "status": "SUCCESS",
+        "state_reached": "READY",
+        "duration_ms": 76.74,
+        "document_id": "doc_29afebdf",
+        "title": "images",
+        "sections_count": 1,
+        "headings_count": 1,
+        "stats": {
+          "paragraphs_count": 4,
+          "tables_count": 0,
+          "sections_count": 1,
+          "headings_count": 1,
+          "words_count": 29,
+          "chars_count": 134,
+          "load_time_ms": 76.71
+        },
+        "blocks_count": 4,
+        "has_headings": true,
+        "has_tables": false,
+        "has_images": false,
+        "has_unsupported": false
+      },
+      {
+        "fixture": "multi_page.docx",
+        "exists": true,
+        "load_start": 1787477203.7158914,
+        "status": "SUCCESS",
+        "state_reached": "READY",
+        "duration_ms": 308.93,
+        "document_id": "doc_2e782fbc",
+        "title": "multi_page",
+        "sections_count": 1,
+        "headings_count": 40,
+        "stats": {
+          "paragraphs_count": 139,
+          "tables_count": 0,
+          "sections_count": 1,
+          "headings_count": 40,
+          "words_count": 5150,
+          "chars_count": 23067,
+          "load_time_ms": 308.78
+        },
+        "blocks_count": 139,
+        "has_headings": true,
+        "has_tables": false,
+        "has_images": false,
+        "has_unsupported": false
+      },
+      {
+        "fixture": "complex_formatting.docx",
+        "exists": true,
+        "load_start": 1787477204.024915,
+        "status": "SUCCESS",
+        "state_reached": "READY",
+        "duration_ms": 37.75,
+        "document_id": "doc_2eb195e1",
+        "title": "complex_formatting",
+        "sections_count": 1,
+        "headings_count": 1,
+        "stats": {
+          "paragraphs_count": 3,
+          "tables_count": 0,
+          "sections_count": 1,
+          "headings_count": 1,
+          "words_count": 41,
+          "chars_count": 188,
+          "load_time_ms": 37.71
+        },
+        "blocks_count": 3,
+        "has_headings": true,
+        "has_tables": false,
+        "has_images": false,
+        "has_unsupported": false
+      },
+      {
+        "fixture": "unsupported_ooxml.docx",
+        "exists": true,
+        "load_start": 1787477204.0628161,
+        "status": "SUCCESS",
+        "state_reached": "READY",
+        "duration_ms": 35.93,
+        "document_id": "doc_4e75794f",
+        "title": "unsupported_ooxml",
+        "sections_count": 1,
+        "headings_count": 1,
+        "stats": {
+          "paragraphs_count": 3,
+          "tables_count": 0,
+          "sections_count": 1,
+          "headings_count": 1,
+          "words_count": 23,
+          "chars_count": 106,
+          "load_time_ms": 35.9
+        },
+        "blocks_count": 4,
+        "has_headings": true,
+        "has_tables": false,
+        "has_images": false,
+        "has_unsupported": true
+      },
+      {
+        "fixture": "corrupted.docx",
+        "exists": true,
+        "load_start": 1787477204.098839,
+        "status": "ERROR_EXPECTED_AND_CAUGHT",
+        "error_type": "InvalidDocxError",
+        "diagnostic": "Invalid or corrupted DOCX file: D:\\Code\\UTC\\ky 5\\SQL ORACLE\\Docx-Agent\\tests\\fixtures\\corrupted.docx. Reason: Package not found at 'D:\\Code\\UTC\\ky 5\\SQL ORACLE\\Docx-Agent\\tests\\fixtures\\corrupted.docx'",
+        "state_reached": "ERROR",
+        "load_end": 1787477204.0995688,
+        "duration_ms": 0.73
+      }
+    ],
+    "errors": [],
+    "metrics": {},
+    "score": 6.0
+  },
+  {
+    "phase": 2,
+    "phase_name": "Word-like Editing & Model Synchronization",
+    "timestamp": "2026-08-23T09:26:44Z",
+    "status": "VERIFIED",
+    "actions": [
+      {
+        "action": "replace_text",
+        "status": "SUCCESS",
+        "replaced_count": 1,
+        "latency_ms": 2.01
+      },
+      {
+        "action": "insert_text",
+        "status": "SUCCESS",
+        "element_id": "p_0003",
+        "latency_ms": 1.67
+      },
+      {
+        "action": "format_text",
+        "status": "SUCCESS",
+        "formatted_count": 1,
+        "latency_ms": 1.68
+      },
+      {
+        "action": "format_paragraph",
+        "status": "SUCCESS",
+        "formatted_count": 1,
+        "latency_ms": 0.93
+      },
+      {
+        "action": "create_table",
+        "status": "SUCCESS",
+        "table_id": "tbl_0002",
+        "latency_ms": 2.3
+      }
+    ],
+    "errors": [],
+    "score": 10.0
+  },
+  {
+    "phase": 3,
+    "phase_name": "Real Save / Reopen Roundtrip",
+    "timestamp": "2026-08-23T09:26:44Z",
+    "status": "VERIFIED",
+    "roundtrip_tests": [
+      {
+        "fixture": "Vietnamese.docx",
+        "save_pipeline": {
+          "success": true,
+          "latency_ms": 99.11,
+          "verification_passed": true
+        },
+        "xml_inspection": {
+          "has_document_xml": true,
+          "has_styles_xml": true,
+          "has_rels": true,
+          "has_modified_marker": true
+        },
+        "status": "SUCCESS"
+      },
+      {
+        "fixture": "academic_report.docx",
+        "save_pipeline": {
+          "success": true,
+          "latency_ms": 69.35,
+          "verification_passed": true
+        },
+        "xml_inspection": {
+          "has_document_xml": true,
+          "has_styles_xml": true,
+          "has_rels": true,
+          "has_modified_marker": true
+        },
+        "status": "SUCCESS"
+      },
+      {
+        "fixture": "tables.docx",
+        "save_pipeline": {
+          "success": true,
+          "latency_ms": 78.23,
+          "verification_passed": true
+        },
+        "xml_inspection": {
+          "has_document_xml": true,
+          "has_styles_xml": true,
+          "has_rels": true,
+          "has_modified_marker": true
+        },
+        "status": "SUCCESS"
+      },
+      {
+        "fixture": "images.docx",
+        "save_pipeline": {
+          "success": true,
+          "latency_ms": 68.07,
+          "verification_passed": true
+        },
+        "xml_inspection": {
+          "has_document_xml": true,
+          "has_styles_xml": true,
+          "has_rels": true,
+          "has_modified_marker": true
+        },
+        "status": "SUCCESS"
+      },
+      {
+        "fixture": "multi_page.docx",
+        "save_pipeline": {
+          "success": true,
+          "latency_ms": 281.3,
+          "verification_passed": true
+        },
+        "xml_inspection": {
+          "has_document_xml": true,
+          "has_styles_xml": true,
+          "has_rels": true,
+          "has_modified_marker": true
+        },
+        "status": "SUCCESS"
+      },
+      {
+        "fixture": "complex_formatting.docx",
+        "save_pipeline": {
+          "success": true,
+          "latency_ms": 63.13,
+          "verification_passed": true
+        },
+        "xml_inspection": {
+          "has_document_xml": true,
+          "has_styles_xml": true,
+          "has_rels": true,
+          "has_modified_marker": true
+        },
+        "status": "SUCCESS"
+      },
+      {
+        "fixture": "unsupported_ooxml.docx",
+        "save_pipeline": {
+          "success": true,
+          "latency_ms": 62.64,
+          "verification_passed": true
+        },
+        "xml_inspection": {
+          "has_document_xml": true,
+          "has_styles_xml": true,
+          "has_rels": true,
+          "has_modified_marker": true
+        },
+        "status": "SUCCESS"
+      }
+    ],
+    "errors": [],
+    "score": 12.0
+  },
+  {
+    "phase": 4,
+    "phase_name": "Selection Context & Antigravity MCP",
+    "timestamp": "2026-08-23T09:26:46Z",
+    "status": "VERIFIED",
+    "selection_tests": [
+      {
+        "target": "heading",
+        "block_id": "h_01_0002",
+        "selected_text": "1. Tổng Quan",
+        "mcp_verified": true
+      },
+      {
+        "target": "paragraph",
+        "block_id": "p_01_0001",
+        "selected_text": "ÁO KIẾN TRÚC HỆ THỐN",
+        "mcp_updated_verified": true
+      }
+    ],
+    "errors": [],
+    "score": 7.0
+  },
+  {
+    "phase": 5,
+    "phase_name": "Agent Edit Transactions & Diff Review",
+    "timestamp": "2026-08-23T09:26:46Z",
+    "status": "VERIFIED",
+    "transaction_tests": [
+      {
+        "step": "proposal_creation",
+        "status": "SUCCESS",
+        "transaction_id": "tx_3e7d1670",
+        "document_unchanged_before_approval": true
+      },
+      {
+        "step": "apply_transaction",
+        "status": "SUCCESS",
+        "applied_transaction_id": "tx_3e7d1670"
+      },
+      {
+        "step": "undo_transaction",
+        "status": "SUCCESS",
+        "restored_original": true
+      },
+      {
+        "step": "reject_proposal",
+        "status": "SUCCESS"
+      }
+    ],
+    "errors": [],
+    "score": 9.0
+  },
+  {
+    "phase": 6,
+    "phase_name": "Clarification Engine",
+    "timestamp": "2026-08-23T09:26:46Z",
+    "status": "VERIFIED",
+    "clarification_cases": [
+      {
+        "instruction": "Viết lại đoạn này cho hay hơn",
+        "confidence": "LOW",
+        "clarification_triggered": true,
+        "question": "Bạn muốn viết lại đoạn văn này theo phong cách nào?",
+        "options": [
+          {
+            "id": "academic",
+            "label": "Học thuật & Trịnh trọng",
+            "description": "Sử dụng từ ngữ học thuật, cấu trúc câu chặt chẽ, khách quan.",
+            "inferred_parameters": {
+              "tone": "academic",
+              "expand": false
+            }
+          },
+          {
+            "id": "concise",
+            "label": "Ngắn gọn & Súc tích",
+            "description": "Loại bỏ từ thừa, tập trung vào ý chính cốt lõi.",
+            "inferred_parameters": {
+              "tone": "concise",
+              "reduce_length": true
+            }
+          },
+          {
+            "id": "technical",
+            "label": "Kỹ thuật chuyên sâu",
+            "description": "Nhấn mạnh thông số, thuật ngữ và cơ chế kỹ thuật.",
+            "inferred_parameters": {
+              "tone": "technical",
+              "detail": "high"
+            }
+          }
+        ]
+      },
+      {
+        "instruction": "Đổi font chữ đoạn 2 sang Times New Roman 13pt và căn đều",
+        "confidence": "HIGH",
+        "clarification_triggered": false
+      },
+      {
+        "instruction": "Vẽ sơ đồ mô tả hệ thống này",
+        "confidence": "LOW",
+        "clarification_triggered": true,
+        "question": "Bạn muốn chèn loại hình minh họa nào cho phần này?"
+      }
+    ],
+    "errors": [],
+    "score": 5.0
+  },
+  {
+    "phase": 7,
+    "phase_name": "Research & Verified Academic Citations",
+    "timestamp": "2026-08-23T09:26:46Z",
+    "status": "VERIFIED",
+    "citation_evaluations": [
+      {
+        "claim": "Transformer architecture revolutionized sequence modeling using self-attention mechanisms.",
+        "style": "apa",
+        "in_text": "(Devlin et al., 2019)",
+        "bibliography": "Devlin, J., Chang, M. W., Lee, K., Toutanova, K. (2019). BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding. NAACL-HLT. https://doi.org/10.48550/arXiv.1810.04805",
+        "verified_authors": [
+          "Devlin, J.",
+          "Chang, M. W.",
+          "Lee, K.",
+          "Toutanova, K."
+        ],
+        "verified_title": "BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding",
+        "verified_year": 2019,
+        "no_hallucination_verified": true
+      },
+      {
+        "claim": "Transformer architecture revolutionized sequence modeling using self-attention mechanisms.",
+        "style": "ieee",
+        "in_text": "[1]",
+        "bibliography": "[1] Devlin, J., Chang, M. W., Lee, K., Toutanova, K., \"BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding,\" NAACL-HLT, 2019. https://doi.org/10.48550/arXiv.1810.04805"
+      }
+    ],
+    "errors": [],
+    "score": 7.0
+  },
+  {
+    "phase": 8,
+    "phase_name": "Diagram Generation & Media Insertion",
+    "timestamp": "2026-08-23T09:26:46Z",
+    "status": "VERIFIED",
+    "diagram_tests": [
+      {
+        "type": "architecture",
+        "caption": "Hình: Kiến Trúc Phân Lớp Docx-Agent V2.1",
+        "width_cm": 12.0,
+        "has_svg": true,
+        "has_mermaid": true
+      },
+      {
+        "type": "flowchart",
+        "caption": "Hình: Quy Trình Lưu Cục Bộ Debounce",
+        "width_cm": 12.0,
+        "has_svg": true
+      }
+    ],
+    "errors": [],
+    "score": 6.0
+  },
+  {
+    "phase": 9,
+    "phase_name": "Pagination & Visual Quality",
+    "timestamp": "2026-08-23T09:26:46Z",
+    "status": "VERIFIED",
+    "zoom_levels_tested": [
+      0.5,
+      0.75,
+      1.0,
+      1.25,
+      1.5,
+      2.0
+    ],
+    "layout_verifications": [
+      {
+        "fixture": "multi_page.docx",
+        "passed": true,
+        "layout_score": 1.0,
+        "blocks_checked": 139,
+        "anomalies": []
+      },
+      {
+        "fixture": "academic_report.docx",
+        "tcvn_margins_verified": true,
+        "margins_cm": {
+          "top": 2.0,
+          "bottom": 2.0,
+          "left": 3.0,
+          "right": 2.0
+        }
+      }
+    ],
+    "errors": [],
+    "score": 10.0
+  },
+  {
+    "phase": 10,
+    "phase_name": "Performance & Latency Benchmarks",
+    "timestamp": "2026-08-23T09:26:46Z",
+    "status": "VERIFIED",
+    "benchmarks": {
+      "1-page": {
+        "scale": "1-page",
+        "file": "simple.docx",
+        "load_time_ms": {
+          "min": 24.21,
+          "p50": 24.21,
+          "p95": 24.21,
+          "p99": 24.21,
+          "max": 24.36
+        },
+        "keystroke_edit_ms": {
+          "min": 0.05,
+          "p50": 0.06,
+          "p95": 0.07,
+          "p99": 0.07,
+          "max": 0.16
+        },
+        "selection_ms": {
+          "min": 19.78,
+          "p50": 19.78,
+          "p95": 19.78,
+          "p99": 19.78,
+          "max": 26.24
+        },
+        "save_time_ms": {
+          "min": 97.16,
+          "p50": 97.16,
+          "p95": 97.16,
+          "p99": 97.16,
+          "max": 97.16
+        },
+        "reopen_time_ms": {
+          "min": 42.38,
+          "p50": 42.38,
+          "p95": 42.38,
+          "p99": 42.38,
+          "max": 42.38
+        }
+      },
+      "10-page": {
+        "scale": "10-page",
+        "file": "multi_page.docx",
+        "load_time_ms": {
+          "min": 269.46,
+          "p50": 269.46,
+          "p95": 269.46,
+          "p99": 269.46,
+          "max": 294.0
+        },
+        "keystroke_edit_ms": {
+          "min": 0.05,
+          "p50": 0.05,
+          "p95": 0.06,
+          "p99": 0.06,
+          "max": 0.1
+        },
+        "selection_ms": {
+          "min": 111.97,
+          "p50": 111.97,
+          "p95": 111.97,
+          "p99": 111.97,
+          "max": 120.76
+        },
+        "save_time_ms": {
+          "min": 298.7,
+          "p50": 298.7,
+          "p95": 298.7,
+          "p99": 298.7,
+          "max": 298.7
+        },
+        "reopen_time_ms": {
+          "min": 300.29,
+          "p50": 300.29,
+          "p95": 300.29,
+          "p99": 300.29,
+          "max": 300.29
+        }
+      },
+      "50-page": {
+        "scale": "50-page",
+        "file": "stress_50_page.docx",
+        "load_time_ms": {
+          "min": 930.26,
+          "p50": 930.26,
+          "p95": 930.26,
+          "p99": 930.26,
+          "max": 964.89
+        },
+        "keystroke_edit_ms": {
+          "min": 0.05,
+          "p50": 0.06,
+          "p95": 0.09,
+          "p99": 0.09,
+          "max": 0.11
+        },
+        "selection_ms": {
+          "min": 348.8,
+          "p50": 348.8,
+          "p95": 348.8,
+          "p99": 348.8,
+          "max": 354.53
+        },
+        "save_time_ms": {
+          "min": 825.57,
+          "p50": 825.57,
+          "p95": 825.57,
+          "p99": 825.57,
+          "max": 825.57
+        },
+        "reopen_time_ms": {
+          "min": 974.74,
+          "p50": 974.74,
+          "p95": 974.74,
+          "p99": 974.74,
+          "max": 974.74
+        }
+      }
+    },
+    "errors": [],
+    "score": 7.0
+  },
+  {
+    "phase": 11,
+    "phase_name": "Dirty Block Tracking & Persistence",
+    "timestamp": "2026-08-23T09:26:52Z",
+    "status": "VERIFIED",
+    "checks": [
+      {
+        "step": "single_block_dirty",
+        "dirty_count": 1,
+        "is_dirty": true
+      },
+      {
+        "step": "multiple_blocks_dirty",
+        "dirty_count": 2
+      },
+      {
+        "step": "atomic_save_and_dirty_reset",
+        "save_duration_ms": 70.55,
+        "dirty_count_after_save": 0,
+        "is_dirty_after_save": false
+      }
+    ],
+    "errors": [],
+    "score": 5.0
+  },
+  {
+    "phase": 12,
+    "phase_name": "Failure Injection & Recovery",
+    "timestamp": "2026-08-23T09:26:53Z",
+    "status": "VERIFIED",
+    "injection_tests": [
+      {
+        "test": "missing_file",
+        "status": "PROPERLY_REJECTED",
+        "error_type": "FileNotFoundError",
+        "diagnostic": "Tài liệu không tồn tại: C:\\Users\\admin\\AppData\\Local\\Temp\\tmphgeh306j\\non_existent_file_9999.docx"
+      },
+      {
+        "test": "corrupted_docx",
+        "status": "PROPERLY_REJECTED",
+        "error_type": "InvalidDocxError",
+        "diagnostic": "Invalid or corrupted DOCX file: D:\\Code\\UTC\\ky 5\\SQL ORACLE\\Docx-Agent\\tests\\fixtures\\corrupted.docx. Reason: Package not found at 'D:\\Code\\UTC\\ky 5\\SQL ORACLE\\Docx-Agent\\tests\\fixtures\\corrupted.docx'"
+      },
+      {
+        "test": "ambiguous_target",
+        "status": "PROPERLY_HANDLED"
+      },
+      {
+        "test": "recovery_after_failure",
+        "status": "SUCCESS",
+        "recovered": true
+      }
+    ],
+    "errors": [],
+    "score": 8.0
+  },
+  {
+    "phase": 13,
+    "phase_name": "UI/UX & Native Antigravity Integration",
+    "timestamp": "2026-08-23T09:26:53Z",
+    "status": "VERIFIED",
+    "inspections": [
+      {
+        "check": "no_duplicate_chat_panel",
+        "passed": true,
+        "details": "Verified 100% of workspace canvas is reserved for document editing. Antigravity native panel is the sole AI interface."
+      },
+      {
+        "check": "word_like_ribbon_structure",
+        "passed": true,
+        "tabs_found": [
+          "HOME",
+          "INSERT",
+          "LAYOUT",
+          "REFERENCES",
+          "REVIEW",
+          "VIEW"
+        ]
+      },
+      {
+        "check": "selection_context_toolbar",
+        "passed": true
+      },
+      {
+        "check": "state_machine_ui_diagnostics",
+        "passed": true
+      }
+    ],
+    "errors": [],
+    "score": 3.0
+  },
+  {
+    "phase": 14,
+    "phase_name": "Architectural Cleanliness & Separation",
+    "timestamp": "2026-08-23T09:26:53Z",
+    "status": "VERIFIED",
+    "layers_audited": [
+      {
+        "layer": "Canonical Document Model",
+        "clean": true,
+        "source_file": "src/docx_agent/canonical/model.py"
+      },
+      {
+        "layer": "Operations Engine",
+        "clean": true,
+        "source_file": "src/docx_agent/engine/operations.py"
+      },
+      {
+        "layer": "Workspace Bridge & Selection",
+        "clean": true,
+        "source_file": "src/docx_agent/interfaces/workspace/bridge.py"
+      }
+    ],
+    "violations": [],
+    "score": 3.0
+  },
+  {
+    "phase": 15,
+    "phase_name": "Test Quality & Test Suite Coverage",
+    "timestamp": "2026-08-23T09:26:53Z",
+    "status": "VERIFIED",
+    "test_categories": {
+      "unit": {
+        "file_count": 7,
+        "files": [
+          "test_cli.py",
+          "test_formatting.py",
+          "test_mcp_and_markdown.py",
+          "test_resolver.py",
+          "test_run_preservation.py",
+          "test_tables_sections_presets.py",
+          "test_v2_scenarios.py"
+        ]
+      },
+      "regression": {
+        "file_count": 1,
+        "files": [
+          "test_unicode_and_backward_compatibility.py"
+        ]
+      },
+      "integration": {
+        "file_count": 2,
+        "files": [
+          "test_large_document.py",
+          "test_workspace_editor.py"
+        ]
+      },
+      "e2e": {
+        "file_count": 1,
+        "files": [
+          "test_e2e_workflow.py"
+        ]
+      }
+    },
+    "total_test_files": 11,
+    "errors": [],
+    "score": 2.0
+  }
+]

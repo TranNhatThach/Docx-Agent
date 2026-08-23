@@ -219,6 +219,14 @@ MCP_TOOLS = [
         },
     },
     {
+        "name": "docx_get_current_selection",
+        "description": "Retrieves the active user text selection context directly from the live Docx-Agent Visual Editor workspace.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {},
+        },
+    },
+    {
         "name": "docx_selection_context",
         "description": "Extracts rich selection context (surrounding paragraphs, section heading, document profile) for a highlighted block.",
         "inputSchema": {
@@ -426,6 +434,18 @@ def handle_tool_call(name: str, args: Dict[str, Any]) -> Dict[str, Any]:
         plan_res = agent.apply_plan(plan_data)
         saved = agent.save(output_path=out_p)
         return {"success": True, "plan_result": plan_res, "document": saved}
+
+    elif name == "docx_get_current_selection":
+        import os
+        from pathlib import Path
+        sel_path = Path(".docx_agent_workspace") / "active_selection.json"
+        if sel_path.exists():
+            with open(sel_path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        return {
+            "has_selection": False,
+            "message": "Không có vùng chọn đang hoạt động trong trình soạn thảo Docx-Agent.",
+        }
 
     elif name == "docx_selection_context":
         agent = DocumentAgent(file_p)

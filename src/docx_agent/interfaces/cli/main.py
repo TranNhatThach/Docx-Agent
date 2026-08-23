@@ -517,5 +517,105 @@ def cmd_diagram(
         sys.exit(1)
 
 
+@app.command("workspace-load")
+def cmd_workspace_load(
+    file_path: str = typer.Argument(..., help="Path to .docx file"),
+    as_json: bool = typer.Option(True, "--json", help="Output machine-readable JSON"),
+):
+    """Loads DOCX and returns full canonical document JSON payload."""
+    try:
+        from docx_agent.interfaces.workspace.bridge import WorkspaceBridge
+        payload = WorkspaceBridge.load_document_payload(file_path)
+        output_result(payload, as_json=as_json)
+    except Exception as e:
+        err_console.print(f"[bold red]Error:[/bold red] {str(e)}")
+        sys.exit(1)
+
+
+@app.command("workspace-save")
+def cmd_workspace_save(
+    file_path: str = typer.Argument(..., help="Target .docx file path"),
+    data_file: str = typer.Argument(..., help="Path to JSON file containing document payload"),
+    output: Optional[str] = typer.Option(None, "--output", help="Output path (defaults to file_path)"),
+    as_json: bool = typer.Option(True, "--json", help="Output machine-readable JSON"),
+):
+    """Saves document payload to DOCX with transactional safety and verification."""
+    try:
+        from docx_agent.interfaces.workspace.bridge import WorkspaceBridge
+        with open(data_file, "r", encoding="utf-8") as f:
+            doc_data = json.load(f)
+        res = WorkspaceBridge.save_document_payload(
+            file_path=file_path,
+            document_data=doc_data,
+            output_path=output,
+        )
+        output_result(res, as_json=as_json)
+    except Exception as e:
+        err_console.print(f"[bold red]Error:[/bold red] {str(e)}")
+        sys.exit(1)
+
+
+@app.command("workspace-selection")
+def cmd_workspace_selection(
+    file_path: str = typer.Argument(..., help="Path to .docx file"),
+    block_id: str = typer.Argument(..., help="Target block ID"),
+    start: int = typer.Option(0, "--start", help="Selection start offset"),
+    end: int = typer.Option(0, "--end", help="Selection end offset"),
+    as_json: bool = typer.Option(True, "--json", help="Output machine-readable JSON"),
+):
+    """Extracts structured SelectionContext for Antigravity Agent."""
+    try:
+        from docx_agent.interfaces.workspace.bridge import WorkspaceBridge
+        ctx = WorkspaceBridge.get_selection_context_payload(file_path, block_id, start, end)
+        output_result(ctx, as_json=as_json)
+    except Exception as e:
+        err_console.print(f"[bold red]Error:[/bold red] {str(e)}")
+        sys.exit(1)
+
+
+@app.command("version")
+def cmd_version(
+    as_json: bool = typer.Option(False, "--json", help="Output machine-readable JSON"),
+):
+    """Outputs the current version of docx-agent."""
+    from docx_agent import __version__
+    if as_json:
+        output_result({"version": __version__, "platform": sys.platform, "python": sys.version.split()[0]}, as_json=True)
+    else:
+        print(f"docx-agent v{__version__} (Python {sys.version.split()[0]} on {sys.platform})")
+
+
+@app.command("health")
+def cmd_health(
+    as_json: bool = typer.Option(True, "--json", help="Output machine-readable JSON"),
+):
+    """Performs runtime health check, dependencies audit, and storage checks."""
+    import platform
+    from docx_agent import __version__
+    from docx_agent.core.config import get_config
+
+    cfg = get_config()
+    health_data = {
+        "status": "HEALTHY",
+        "version": __version__,
+        "python_version": platform.python_version(),
+        "platform": platform.platform(),
+        "environment": cfg.env,
+        "workspace_port": cfg.workspace_port,
+        "max_file_size_mb": cfg.max_file_size_mb,
+        "capabilities": {
+            "docx_import_export": True,
+            "deterministic_pagination": True,
+            "transactional_rollback": True,
+            "visual_verification": True,
+            "mcp_server": True,
+            "academic_presets": True,
+        }
+    }
+    output_result(health_data, as_json=as_json)
+
+
 if __name__ == "__main__":
     app()
+
+

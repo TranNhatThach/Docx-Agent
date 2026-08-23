@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "docx-agent"
-version = "2.0.0"
+version = "2.1.0"
 description = "Universal Open-Source DOCX Agent Platform & AI-Native Document Workspace"
 readme = "README.md"
 authors = [
@@ -12,10 +12,11 @@ authors = [
 ]
 license = { text = "MIT" }
 requires-python = ">=3.10"
-keywords = ["docx", "agent", "word", "ai", "mcp", "llm", "automation", "ooxml"]
+keywords = ["docx", "agent", "word", "ai", "mcp", "llm", "automation", "ooxml", "document-editor"]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
@@ -24,6 +25,7 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
     "Topic :: Text Processing :: Markup",
     "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Scientific/Engineering :: Information Analysis",
 ]
 dependencies = [
     "python-docx>=1.1.0",
@@ -40,6 +42,9 @@ mcp = [
 dev = [
     "pytest>=8.0.0",
     "pytest-cov>=4.0.0",
+    "ruff>=0.4.0",
+    "mypy>=1.9.0",
+    "build>=1.0.0",
 ]
 
 [project.scripts]
@@ -50,9 +55,40 @@ docx-agent-mcp = "docx_agent.interfaces.mcp.server:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-docx_agent = ["presets/*.json"]
+docx_agent = ["presets/*.json", "interfaces/workspace/app.html"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
 addopts = "-v --strict-markers"
+filterwarnings = [
+    "ignore::DeprecationWarning",
+]
+
+[tool.coverage.run]
+source = ["src/docx_agent"]
+omit = ["tests/*", "**/__pycache__/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "C4", "UP"]
+ignore = ["E501", "B008", "C901"]
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+ignore_missing_imports = true

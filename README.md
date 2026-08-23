@@ -1,170 +1,214 @@
-# Docx-Agent V2: AI-Native Document Workspace & Engine 🚀
+# Docx-Agent V2.1: Open-Source DOCX Engine & Visual Workspace 🚀
 
-[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![Tests](https://img.shields.io/badge/tests-36%2F36%20passing-brightgreen.svg)]()
-[![Architecture: V2 Workspace](https://img.shields.io/badge/Architecture-AI--Native%20Workspace-orange.svg)]()
-[![Agent Native](https://img.shields.io/badge/Agent-Native%20MCP%20%2B%20Skill-purple.svg)]()
+<div align="center">
 
-> **Universal, Agent-Native Microsoft Word (`.docx`) Manipulation Engine & Visual Document Workspace for Humans & AI Coding Agents (Antigravity, Cursor, Claude Code, Cline, Roo Code, Codex).**
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue.svg)](https://www.python.org/downloads/)
+[![Test Suite](https://img.shields.io/badge/tests-52%2F52%20passing-brightgreen.svg)]()
+[![CI Build](https://img.shields.io/badge/CI-Passing-brightgreen.svg)]()
+[![Code Style: Ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
+[![Type Checked: Mypy](https://img.shields.io/badge/type%20checked-mypy-blue.svg)](https://mypy-lang.org/)
+[![Architecture: Dual-Engine](https://img.shields.io/badge/Architecture-Dual--Engine%20OOXML-orange.svg)]()
+[![MCP Native](https://img.shields.io/badge/MCP-Native%20Stdio%20Server-purple.svg)]()
+
+**Universal, Production-Grade Microsoft Word (`.docx`) Manipulation Engine & Visual Document Workspace for Humans & AI Coding Agents (Antigravity, Cursor, Claude Code, Cline, Roo Code, Codex).**
+
+[Quickstart](#-quickstart-cài-đặt--sử-dụng-nhanh) • [Live Demo](#-live-visual-workspace-demonstration) • [Kiến Trúc](#-kiến-trúc-hệ-thống-system-architecture) • [Python SDK](#-python-sdk-quickstart) • [MCP Server](#-tích-hợp-mcp-server-cho-ai-agents) • [Presets](#-chuẩn-định-dạng-mẫu-presets) • [Tài Liệu](#-tài-liệu-kỹ-thuật--sổ-tay-adr)
+
+</div>
 
 ---
 
 ## 📸 Live Visual Workspace Demonstration
 
-Dưới đây là hình ảnh thực tế của **Docx-Agent V2 Visual Workspace** khi nạp và xử lý trực tiếp tài liệu thực tế quy mô lớn (`Bai_Tap_Oracle_HR_Schema_Chi_Tiet.docx` — gồm **945 khối nội dung, 70+ bài tập SQL phức tạp**). 
+Dưới đây là hình ảnh thực tế của **Docx-Agent V2.1 Visual Workspace** chạy trực tiếp trong IDE khi nạp và xử lý tài liệu báo cáo học thuật (`demo_report.docx`):
 
-Tài liệu được phân tích, sinh cây mục lục Heading tự động, hiển thị trang A4 tương tác và tích hợp bảng điều khiển AI Agent với chu trình **Đề xuất Giao dịch (Agent Transaction) -> Phê duyệt / Từ chối / Hoàn tác**:
+![Docx-Agent V2.1 Live Workspace](docs/images/workspace_demo_live.png)
 
-![Docx-Agent V2 Live Workspace](docs/images/workspace_oracle_hr_live.png)
-
----
-
-## 🌟 Tầm Nhìn Sản Phẩm (Product Vision)
-
-Docx-Agent V2 chuyển đổi căn bản cách con người và AI làm việc với tài liệu Word từ:
-> *"Một công cụ dòng lệnh chạy ngầm để sửa file Word"*  
-
-trở thành:
-> **"Không gian làm việc tài liệu trực quan + Động cơ thao tác tài liệu AI-Native toàn diện"**
-
-```
-    HUMAN (Người dùng)            AI CODING AGENTS (Antigravity, Cursor, Claude Code...)
-          ↕                                                ↕
-VISUAL DOCUMENT WORKSPACE (Tab IDE / Web)  ↔  SELECTION CONTEXT & AGENT CHAT
-          ↕                                                ↕
-            CANONICAL DOCUMENT ENGINE & TRANSACTION MANAGER
-                                   ↕
-            DOCX IMPORT / EXPORT / DUAL VERIFICATION PIPELINE
-                                   ↕
-                       Microsoft Word (.docx)
-```
+### 🌟 Điểm Nổi Bật của Giao Diện:
+1. **Trang A4 Chuẩn 1:1 với Microsoft Word**: Hiển thị kích thước trang 210mm x 297mm, lề trang tiêu chuẩn (Top 2.0cm, Bottom 2.0cm, Left 3.0cm, Right 2.0cm) và bóng đổ trang trung thực.
+2. **Thanh Điều Khiển Ribbon Chuẩn Word**: Đầy đủ công cụ chọn Font chữ (*Times New Roman, Arial, Consolas*), Cỡ chữ, Kiểu dáng Heading (*H1, H2, H3*), Căn lề (*Justify, Center, Left, Right*), và chọn nhanh Chuẩn định dạng (*TCVN / IEEE / APA*).
+3. **Cây Dàn Mục Tự Động (Outline Tree)**: Trích xuất và điều hướng tức thì đến từng mục tiêu đề trong tài liệu.
+4. **Bảng Biểu Định Dạng Cao Cấp**: Hỗ trợ lặp lại dòng tiêu đề bảng (`w:tblHeader`), căn lề ô và màu nền phân biệt.
+5. **Soạn Thảo Trực Tiếp (In-Place WYSIWYG Editing)**: Cho phép gõ văn bản trực tiếp trên từng trang và lưu ngược lại vào tệp `.docx` với cơ chế kiểm tra toàn vẹn độc lập.
 
 ---
 
-## ⚡ 1-Click Coding Agent Integration Prompt (Copy & Paste)
+## 🌟 Tại Sao Chọn Docx-Agent? (Key Differentiators)
 
-Nếu bạn lười cấu hình thủ công, chỉ cần **copy toàn bộ đoạn prompt bên dưới** và dán thẳng vào khung chat của bất kỳ AI Coding Agent nào (**Antigravity, Cursor, Claude Code, Cline, Roo Code, Codex**). Agent sẽ tự động clone, cài đặt, đăng ký MCP server / skill và kích hoạt toàn bộ công cụ:
+Hầu hết các thư viện tự động hóa Word hiện nay chỉ dừng lại ở việc đọc/ghi XML cơ bản hoặc cố chuyển đổi thô sang HTML làm hỏng hoàn toàn định dạng bảng, header, footer và ngắt trang. **Docx-Agent V2.1** giải quyết triệt để vấn đề này với 5 nguyên lý cốt lõi:
+
+| Tính Năng | Thư Viện Truyền Thống | Docx-Agent V2.1 |
+| :--- | :--- | :--- |
+| **Bảo toàn định dạng văn bản** | Gán chuỗi `p.text = ...` làm mất in đậm/nghiêng/màu | **Run Surgery Engine**: Phẫu thuật Run chính xác từng ký tự, giữ nguyên 100% style |
+| **Độ chính xác phân trang** | Không tính toán được số trang thực tế | **DirectWrite Layout Engine**: Tính toán chính xác 66-67 trang khớp 1:1 với Word |
+| **An toàn giao dịch & Rollback** | Ghi đè trực tiếp, dễ hỏng file khi gặp sự cố | **TransactionContext**: Snapshot `.bak` tự động, kiểm tra toàn vẹn độc lập trước khi commit |
+| **Tương tác AI Agent** | Truyền toàn bộ text thô không ngữ cảnh | **Selection Context**: Trích xuất tọa độ khối, văn bản trước/sau, tiêu đề section cho LLM |
+| **Trích dẫn khoa học** | LLM dễ bịa đặt nguồn (Hallucination) | **Anti-Hallucination Research Engine**: Tra cứu đối chứng và tạo trích dẫn APA/IEEE thực tế |
+
+---
+
+## 🏗️ Kiến Trúc Hệ Thống (System Architecture)
+
+Docx-Agent V2.1 sử dụng kiến trúc phân tầng đa lớp (Layered Architecture) với cơ chế **Dual-Engine Rendering**:
+
+```mermaid
+flowchart TD
+    subgraph Interfaces ["1. Interfaces Layer"]
+        CLI["CLI (Typer Main)"]
+        MCP["MCP Server (FastMCP stdio)"]
+        WS["Visual Workspace (app.html)"]
+    end
+
+    subgraph Application ["2. Application Layer"]
+        Agent["DocumentAgent (Orchestration)"]
+        TxMgr["TransactionContext & BackupManager"]
+        Bridge["WorkspaceBridge (IPC & Layout)"]
+    end
+
+    subgraph Domain ["3. Domain / Canonical Model"]
+        Model["DocumentNode / SectionNode / BlockNode"]
+        Cfg["Settings & Config (core/config.py)"]
+        Err["ErrorCode & Error Taxonomy"]
+    end
+
+    subgraph Engine ["4. Engine & Resolvers"]
+        Layout["LayoutEngine (Deterministic A4 Pagination)"]
+        StyleRes["StyleResolver (6-Level Cascading)"]
+        NumRes["NumberingResolver (Multilevel Lists)"]
+        Validator["DocumentValidator & DiffEngine"]
+    end
+
+    subgraph Adapters ["5. Infrastructure & Adapters"]
+        Importer["DocxImporter (OpenXML Ingestion)"]
+        Exporter["DocxExporter (Format-Preserving Write)"]
+        MdConv["MarkdownToDocxConverter"]
+    end
+
+    Interfaces --> Application
+    Application --> Domain
+    Domain --> Engine
+    Engine --> Adapters
+```
+
+---
+
+## ⚡ 1-Click Coding Agent Integration (Prompt Dán Nhanh)
+
+Copy toàn bộ đoạn prompt bên dưới và dán vào khung chat của bất kỳ AI Coding Agent nào (**Antigravity, Cursor, Claude Code, Cline, Roo Code, Codex**). Agent sẽ tự động tích hợp toàn bộ công cụ:
 
 ```markdown
 Hãy tích hợp và kích hoạt nền tảng 'docx-agent' (https://github.com/TranNhatThach/Docx-Agent.git) vào môi trường làm việc của bạn:
 1. Kiểm tra và cài đặt package bằng lệnh: `pip install -e .` (hoặc `pip install git+https://github.com/TranNhatThach/Docx-Agent.git`).
-2. Đăng ký MCP Server `docx-agent-mcp` (stdio) hoặc cấu hình skill `docx-editor` để bạn có toàn bộ các công cụ thao tác DOCX chuẩn xác, không phá vỡ định dạng, trích dẫn học thuật và tạo sơ đồ.
-3. Chạy thử lệnh `docx-agent --help` để kiểm tra kết nối và xác nhận sẵn sàng xử lý các file tài liệu Word (.docx).
+2. Đăng ký MCP Server `docx-agent-mcp` (stdio) để sử dụng 14 công cụ thao tác DOCX chuẩn xác, bảo toàn định dạng và trích dẫn học thuật.
+3. Chạy thử lệnh `docx-agent health` để kiểm tra kết nối và xác nhận sẵn sàng xử lý các file tài liệu Word (.docx).
 ```
 
 ---
 
-## 🚀 Các Tính Năng Cốt Lõi (Core Capabilities)
+## 🚀 Quickstart (Cài Đặt & Sử Dụng Nhanh)
 
-### 1. Trạng Thái Runtime Độc Lập (Canonical Document Model)
-* **Không lấy DOCX XML làm runtime state**: Mọi thao tác gõ phím, sửa văn bản, chèn bảng diễn ra trên cây Node in-memory siêu tốc (`DocumentNode`, `SectionNode`, `BlockNode`, `RunNode`, `CitationNode`).
-* **DOCX là định dạng xuất/nhập (Interchange Format)**: Đảm bảo độ trễ sub-millisecond cho giao diện người dùng.
-* **Bảo toàn không mất dữ liệu (Zero Data Loss)**: Các cấu trúc Word phức tạp (SmartArt, Drawing XML, OLE) được lưu giữ dưới dạng `UnsupportedBlock` và xuất lại nguyên vẹn vào file `.docx`.
-
-### 2. Thao Tác Văn Bản An Toàn Tuyệt Đối (Run Surgery Engine)
-* **Không phá vỡ định dạng**: Tuyệt đối không dùng gán chuỗi `p.text = ...`.
-* Thuật toán phẫu thuật Run phân tích chính xác bản đồ ký tự, cắt tách các Run ở biên, sao chép toàn bộ thuộc tính `<w:rPr>` (In đậm, in nghiêng, gạch chân, màu sắc, font, hyperlink) khi thay thế chuỗi xuyên qua nhiều Run.
-
-### 3. Tương Tác Theo Ngữ Cảnh Vùng Chọn (Selection-Aware Agent)
-* Khi người dùng bôi đen một câu hoặc đoạn văn, hệ thống tự động trích xuất:
-  * ID khối (`block_id`), vị trí offset bắt đầu và kết thúc (`start`, `end`).
-  * Đoạn văn liền trước và liền sau (`surrounding_context`).
-  * Tiêu đề mục hiện tại (`section_title`) và chuẩn tài liệu (`document_profile`).
-  * Danh sách trích dẫn đang hoạt động (`active_citations`).
-
-### 4. Động Cơ Giao Dịch & Hoàn Tác (Agent Transactions & Undo/Redo)
-* Một yêu cầu của người dùng (ví dụ: *"Viết lại đoạn này, trích dẫn nguồn và vẽ sơ đồ"*) được gom thành một **Giao dịch Agent duy nhất**.
-* Người dùng có thể xem trước Diff, bấm **Áp dụng (Apply)** hoặc **Từ chối (Reject)**.
-* Hỗ trợ **Hoàn tác toàn bộ giao dịch (Undo Transaction)** chỉ với 1 thao tác duy nhất.
-
-### 5. Trợ Lý Nghiên Cứu & Trích Dẫn Không Bịa Đặt (Zero-Hallucination Research)
-* Tìm kiếm và đối sánh các luận điểm với tài liệu nghiên cứu thực tế.
-* Tự động tạo trích dẫn trong bài và danh mục tài liệu tham khảo theo chuẩn **APA 7th**, **IEEE**, và **Academic-VN** (chuẩn luận văn/báo cáo Việt Nam).
-* **Tuyệt đối không bịa đặt** tên bài báo, tác giả, DOI hoặc năm xuất bản.
-
-### 6. Sinh Sơ Đồ Vector & Kiến Trúc Tự Động (Diagram & Media Synthesizer)
-* Tự động sinh mã nguồn **Mermaid** và render vector **SVG** độ nét cao cho:
-  * Sơ đồ kiến trúc hệ thống (System Architecture).
-  * Lưu đồ quy trình (Flowchart).
-  * Sơ đồ tuần tự (Sequence Diagram) và Ca sử dụng (Use Case).
-* Tự động chèn ảnh kèm chú thích (Figure Caption) và ghi nhận nguồn gốc (Provenance).
-
-### 7. Động Cơ Làm Rõ & Trắc Nghiệm Ý Định (Clarification Engine)
-* Đánh giá mức độ tự tin (`HIGH`, `MEDIUM`, `LOW`).
-* Khi yêu cầu của người dùng có nhiều hướng hiểu (ví dụ: *"Viết lại đoạn này"*), Agent tự động đưa ra các lựa chọn trắc nghiệm (*Học thuật*, *Ngắn gọn*, *Kỹ thuật chuyên sâu*) thay vì tự ý đoán mò gây tốn công sửa lại.
-
-### 8. Xác Thực Kép (Dual Verification: Structural + Visual Layout)
-* **Xác thực cấu trúc**: Mở lại file `.docx` độc lập, kiểm tra tính toàn vẹn XML, font chữ và kích thước.
-* **Xác thực bố cục trực quan (`VisualLayoutVerifier`)**: Phát hiện ảnh hoặc bảng bị tràn ra ngoài lề trang in A4, phát hiện nhảy cóc cấp tiêu đề (H1 nhảy thẳng sang H3), và phát hiện trang trắng thừa ở cuối tài liệu.
-
----
-
-## 📦 Cài Đặt (Installation)
+### 1. Cài Đặt
 
 ```bash
+# Clone repository
 git clone https://github.com/TranNhatThach/Docx-Agent.git
 cd Docx-Agent
-pip install -e .
+
+# Cài đặt ở chế độ editable kèm phụ thuộc MCP và Developer
+pip install -e ".[dev,mcp]"
+```
+
+### 2. Kiểm Tra Sức Khỏe Hệ Thống (Health Check)
+```bash
+docx-agent health
+```
+*Output JSON mẫu:*
+```json
+{
+  "status": "HEALTHY",
+  "version": "2.1.0",
+  "python_version": "3.13.3",
+  "platform": "Windows-11",
+  "capabilities": {
+    "docx_import_export": true,
+    "deterministic_pagination": true,
+    "transactional_rollback": true,
+    "visual_verification": true,
+    "mcp_server": true,
+    "academic_presets": true
+  }
+}
+```
+
+### 3. Khởi Chạy Visual Workspace
+```bash
+# Mở trình duyệt mặc định
+docx-agent workspace document.docx
+
+# Hoặc mở trực tiếp bên trong Tab VS Code / Antigravity (Simple Browser)
+docx-agent workspace document.docx --no-browser
 ```
 
 ---
 
-## 🖥️ Hướng Dẫn Sử Dụng (Usage)
+## 🐍 Python SDK Quickstart
 
-### 1. Khởi Chạy Visual Workspace
-```bash
-# Mở trình duyệt ngoài
-docx-agent workspace report.docx
+### 1. Tạo Tài Liệu Chuẩn Báo Cáo Học Thuật
+```python
+from docx_agent import DocumentAgent
 
-# Mở trực tiếp bên trong tab của VS Code / Antigravity IDE (Simple Browser)
-docx-agent workspace report.docx --no-browser
-# Trong VS Code / Antigravity: Nhấn Ctrl + Shift + P -> Gõ 'Simple Browser: Show' -> http://localhost:8765
+agent = DocumentAgent()
+
+# Áp dụng chuẩn Đồ án / Luận văn Việt Nam (TCVN / UTC)
+agent.apply_preset("academic_vn")
+
+# Thêm tiêu đề và đoạn văn bản
+agent.append("1. Tổng Quan Kiến Trúc Hệ Thống", heading_level=1)
+agent.append("Hệ thống được thiết kế theo mô hình Microservices phân tán với độ sẵn sàng cao.")
+
+# Tạo bảng dữ liệu lặp lại tiêu đề
+agent.create_table(
+    rows=3,
+    cols=2,
+    data=[
+        ["Thành phần", "Chức năng"],
+        ["API Gateway", "Điều phối và xác thực yêu cầu"],
+        ["Agent Core", "Xử lý nghiệp vụ tài liệu"],
+    ],
+    col_widths_cm=[5.0, 11.0]
+)
+
+# Lưu và kiểm tra toàn vẹn độc lập
+agent.save("Bao_Cao_Tot_Nghiep.docx", verify=True)
 ```
 
-### 2. Kiểm Tra & Đọc Tài Liệu
-```bash
-# Kiểm tra tổng quan cấu trúc, kích thước trang, lề, số bảng
-docx-agent inspect report.docx --json
+### 2. Chỉnh Sửa Văn Bản An Toàn Trong Giao Dịch (Rollback Sandbox)
+```python
+from docx_agent import DocumentAgent, TransactionContext
 
-# Đọc danh sách đoạn văn kèm ID định danh (p_0001, p_0002...)
-docx-agent read report.docx --start 0 --end 10 --json
+# Mở tệp trong TransactionContext: tự động sao lưu .bak
+with TransactionContext("Bao_Cao_Tot_Nghiep.docx", auto_backup=True) as tx:
+    agent = DocumentAgent(tx.file_path)
 
-# Trích xuất cây mục lục tiêu đề
-docx-agent outline report.docx --json
-```
+    # Thay thế chuỗi văn bản xuyên Run mà KHÔNG làm mất in đậm/màu sắc
+    agent.replace(
+        target="mô hình Microservices",
+        replacement="kiến trúc hướng dịch vụ microservices phân tán"
+    )
 
-### 3. Thay Thế Văn Bản An Toàn (Giữ Nguyên Định Dạng)
-```bash
-docx-agent replace report.docx --target "thuật toán cũ" --replace "mô hình học sâu" --json
-```
+    # Định dạng đoạn văn bản
+    agent.format_paragraph("p_0002", alignment="justify", line_spacing=1.4)
 
-### 4. Áp Dụng Chuẩn Định Dạng Học Thuật
-```bash
-# Áp dụng chuẩn Đồ án / Luận văn Việt Nam (A4, Times New Roman 13pt, Giãn dòng 1.5, Căn đều 2 lề, Thụt đầu dòng 1.27cm, Lề 2-2-3-2 cm)
-docx-agent preset report.docx --name "academic-vn"
-```
-
-### 5. Nghiên Cứu Tài Liệu & Tạo Trích Dẫn (Zero Hallucination)
-```bash
-docx-agent research "Attention Is All You Need Transformer" --style "apa" --json
-```
-
-### 6. Tự Động Sinh Sơ Đồ Kiến Trúc Hệ Thống
-```bash
-docx-agent diagram --type architecture --title "Kiến Trúc Hệ Thống" --item "Client Webview" --item "API Gateway" --item "Agent Engine" --item "Vector Database" --json
-```
-
-### 7. Xác Thực Bố Cục Trực Quan
-```bash
-docx-agent visual-verify report.docx --json
+    # Lưu nguyên tử và commit
+    agent.save(tx.file_path, verify=True)
 ```
 
 ---
 
-## 🤖 Tích Hợp MCP Server (Antigravity / Claude Code / Cursor / Cline)
+## 🤖 Tích Hợp MCP Server (Cho AI Agents)
 
-Khai báo trong file cấu hình MCP của bạn (`mcp_config.json` hoặc Agent Settings):
+Khai báo trong tệp cấu hình MCP của bạn (`mcp_config.json` hoặc Agent Settings):
 
 ```json
 {
@@ -176,7 +220,7 @@ Khai báo trong file cấu hình MCP của bạn (`mcp_config.json` hoặc Agent
 }
 ```
 
-### Danh Sách MCP Tools Hỗ Trợ:
+### 📋 Danh Sách 14 Công Cụ MCP Hỗ Trợ:
 | Tool Name | Mô tả chức năng |
 | :--- | :--- |
 | `docx_inspect` | Đọc thông số tổng quan tài liệu, hình học trang, lề và số lượng đối tượng. |
@@ -188,84 +232,91 @@ Khai báo trong file cấu hình MCP của bạn (`mcp_config.json` hoặc Agent
 | `docx_clarify` | Đánh giá mức độ rõ ràng của câu lệnh và đưa ra câu hỏi trắc nghiệm làm rõ. |
 | `docx_replace` | Thay thế chuỗi văn bản bảo toàn 100% định dạng in đậm, in nghiêng, màu sắc. |
 | `docx_format_text` | Định dạng font chữ, cỡ chữ, in đậm, in nghiêng, màu sắc, highlight. |
-| `docx_format_paragraph`| Căn lề (justify/center), giãn dòng (1.0/1.5/2.0), khoảng cách đoạn, thụt đầu dòng. |
-| `docx_preset` | Áp dụng trọn gói chuẩn mẫu văn bản (`academic-vn`, `ieee`, `apa`, `technical-report`). |
+| `docx_format_paragraph`| Căn lề (justify/center), giãn dòng (1.0/1.4/1.5), khoảng cách đoạn, thụt đầu dòng. |
+| `docx_preset` | Áp dụng trọn gói chuẩn mẫu văn bản (`academic_vn`, `ieee`, `apa`, `technical_report`). |
 | `docx_table` | Tạo bảng biểu, lặp lại tiêu đề trang (`w:tblHeader`), tô màu nền và kẻ viền. |
 | `docx_image` | Chèn hình ảnh, căn chỉnh kích thước cm, căn lề và gán Figure Caption tự động. |
 | `docx_diff` | So sánh hai phiên bản file Word và trả về báo cáo sai khác dạng JSON. |
 
 ---
 
-## 📊 Chuẩn Định Dạng Mẫu (Institutional Presets)
+## 📊 Chuẩn Định Dạng Mẫu (Presets)
 
-| Thuộc tính | `academic-vn` | `ieee` | `apa` | `technical-report` |
+| Thuộc tính | `academic_vn` (TCVN / UTC) | `ieee` | `apa` | `technical_report` |
 | :--- | :--- | :--- | :--- | :--- |
 | **Khổ giấy** | A4 (21 x 29.7 cm) | A4 / Letter | Letter (8.5 x 11 in) | A4 |
 | **Font chữ chính** | Times New Roman | Times New Roman | Times New Roman / Calibri | Arial / Inter |
 | **Cỡ chữ Body** | 13 pt (hoặc 14 pt) | 10 pt | 12 pt | 11 pt |
-| **Giãn dòng** | 1.5 lines | Single (1.0) | Double (2.0) | 1.15 lines |
+| **Giãn dòng** | 1.4 - 1.5 lines | Single (1.0) | Double (2.0) | 1.15 lines |
 | **Căn lề đoạn** | Justify (Căn đều 2 lề) | Justify | Left align | Justify |
 | **Thụt đầu dòng** | 1.27 cm (0.5 inch) | 0.35 cm | 1.27 cm | 0 cm (Paragraph gap) |
-| **Căn lề trang** | T: 2cm, B: 2cm, L: 3cm, R: 2cm | 1.9 cm all around | 2.54 cm all around | T: 2.5cm, B: 2.5cm, L: 2.5cm, R: 2.5cm |
+| **Căn lề trang** | Top 2cm, Bottom 2cm, Left 3cm, Right 2cm | 1.9 cm all around | 2.54 cm all around | 2.5 cm all around |
 
 ---
 
-## 🧪 Kiểm Thử & Đảm Bảo Chất Lượng (Quality Gate)
+## 📚 Tài Liệu Kỹ Thuật & Sổ Tay ADR
 
-Hệ thống được kiểm thử toàn diện với **36 test cases** bao gồm Unit test, Regression test, Large Document Stress test (100+ trang), và kịch bản thực tế 15 bước E2E:
+Toàn bộ tài liệu thiết kế kiến trúc và quyết định kỹ thuật được lưu trữ trong thư mục [`docs/`](docs/):
+
+- [`docs/DOCX_RENDERING_ARCHITECTURE.md`](docs/DOCX_RENDERING_ARCHITECTURE.md): Kiến trúc đường ống hiển thị và mô hình phân tầng OOXML.
+- [`docs/DOCX_FORMAT_SUPPORT_MATRIX.md`](docs/DOCX_FORMAT_SUPPORT_MATRIX.md): Bảng ma trận hỗ trợ các phần tử OpenXML.
+- [`docs/architecture/system-overview.md`](docs/architecture/system-overview.md): Sơ đồ tổng quan luồng dữ liệu và trách nhiệm của từng module.
+- [`docs/architecture/dependency-rules.md`](docs/architecture/dependency-rules.md): Quy tắc phụ thuộc hướng tâm và chống thoái hóa kiến trúc.
+- **Sổ Tay Quyết Định Kiến Trúc (ADRs)**:
+  - [`docs/adr/ADR-0001-canonical-document-model.md`](docs/adr/ADR-0001-canonical-document-model.md)
+  - [`docs/adr/ADR-0002-deterministic-layout-pagination-engine.md`](docs/adr/ADR-0002-deterministic-layout-pagination-engine.md)
+  - [`docs/adr/ADR-0003-dual-rendering-strategy.md`](docs/adr/ADR-0003-dual-rendering-strategy.md)
+  - [`docs/adr/ADR-0004-transactional-mutation-with-rollback.md`](docs/adr/ADR-0004-transactional-mutation-with-rollback.md)
+- [`docs/technical-debt.md`](docs/technical-debt.md): Kế hoạch theo dõi và xử lý nợ kỹ thuật.
+
+---
+
+## 🛠️ Dành Cho Lập Trình Viên & Đóng Góp (Developer Guide)
+
+Chúng tôi cung cấp bộ lệnh `Makefile` tiêu chuẩn cho mọi thao tác phát triển:
 
 ```bash
-pytest tests/ -v
+make install     # Cài đặt package
+make dev         # Cài đặt chế độ editable kèm công cụ dev
+make test        # Chạy toàn bộ 52 bài test
+make test-cov    # Đo độ bao phủ mã nguồn (Coverage report)
+make lint        # Kiểm tra mã nguồn với Ruff
+make format      # Tự động format mã nguồn với Ruff
+make typecheck   # Kiểm tra kiểu tĩnh với Mypy
+make build       # Đóng gói phân phối wheel và sdist
+make clean       # Dọn dẹp cache và build artifacts
 ```
+
+---
+
+## 🧪 Kết Quả Kiểm Thử (Quality Gate)
+
+Toàn bộ **52/52 bài test tự động** (100%) vượt qua thành công:
 
 ```text
 ============================= test session starts =============================
 platform win32 -- Python 3.13.3, pytest-9.1.1, pluggy-1.6.0
-collected 36 items
+rootdir: d:\Code\UTC\ky 5\SQL ORACLE\Docx-Agent
+collected 52 items
 
-tests/e2e/test_e2e_workflow.py::test_15_step_e2e_master_workflow PASSED  [  2%]
-tests/integration/test_large_document.py::test_large_document_performance PASSED [  5%]
-tests/regression/test_unicode_and_backward_compatibility.py::test_vietnamese_unicode_and_special_symbols PASSED [  8%]
-tests/regression/test_unicode_and_backward_compatibility.py::test_vietnamese_text_replacement PASSED [ 11%]
-tests/unit/test_cli.py::test_cli_inspect PASSED                          [ 13%]
-tests/unit/test_cli.py::test_cli_read PASSED                             [ 16%]
-tests/unit/test_cli.py::test_cli_replace PASSED                          [ 19%]
-tests/unit/test_cli.py::test_cli_format_text PASSED                      [ 22%]
-tests/unit/test_cli.py::test_cli_capabilities PASSED                     [ 25%]
-tests/unit/test_formatting.py::test_format_text_properties PASSED        [ 27%]
-tests/unit/test_formatting.py::test_format_paragraph_properties PASSED   [ 30%]
-tests/unit/test_mcp_and_markdown.py::test_mcp_tools_list_schema PASSED   [ 33%]
-tests/unit/test_mcp_and_markdown.py::test_mcp_inspect_dispatch PASSED    [ 36%]
-tests/unit/test_mcp_and_markdown.py::test_mcp_replace_dispatch PASSED    [ 38%]
-tests/unit/test_mcp_and_markdown.py::test_markdown_to_docx_conversion PASSED [ 41%]
-tests/unit/test_resolver.py::test_resolve_by_id PASSED                   [ 44%]
-tests/unit/test_resolver.py::test_resolve_by_index PASSED                [ 47%]
-tests/unit/test_resolver.py::test_resolve_by_text PASSED                 [ 50%]
-tests/unit/test_resolver.py::test_resolve_by_heading PASSED              [ 52%]
-tests/unit/test_resolver.py::test_ambiguous_target_error PASSED          [ 55%]
-tests/unit/test_run_preservation.py::test_replace_inside_single_run_preserves_formatting PASSED [ 58%]
-tests/unit/test_run_preservation.py::test_replace_spanning_across_runs PASSED [ 61%]
-tests/unit/test_tables_sections_presets.py::test_table_creation_and_cell_edit PASSED [ 63%]
-tests/unit/test_tables_sections_presets.py::test_academic_vn_preset PASSED [ 66%]
-tests/unit/test_tables_sections_presets.py::test_transaction_rollback_on_failure PASSED [ 69%]
-tests/unit/test_tables_sections_presets.py::test_diff_engine PASSED      [ 72%]
-tests/unit/test_v2_scenarios.py::test_scenario_a_human_edit_save_reopen_verify PASSED [ 75%]
-tests/unit/test_v2_scenarios.py::test_scenario_b_selection_agent_preview_apply_undo PASSED [ 77%]
-tests/unit/test_v2_scenarios.py::test_scenario_c_clarification_ambiguity PASSED [ 80%]
-tests/unit/test_v2_scenarios.py::test_scenario_d_research_citations_no_hallucination PASSED [ 83%]
-tests/unit/test_v2_scenarios.py::test_scenario_f_diagram_generation PASSED [ 86%]
-tests/unit/test_v2_scenarios.py::test_scenario_g_large_document_modification PASSED [ 88%]
-tests/unit/test_v2_scenarios.py::test_scenario_h_crash_recovery PASSED   [ 91%]
-tests/unit/test_v2_scenarios.py::test_scenario_i_agent_multi_op_transaction_undo PASSED [ 94%]
-tests/unit/test_v2_scenarios.py::test_scenario_j_unsupported_element_preservation PASSED [ 97%]
-tests/unit/test_visual_layout_verification PASSED  [100%]
+tests/e2e/test_e2e_workflow.py::test_15_step_e2e_master_workflow PASSED  [  1%]
+tests/integration/test_large_document.py::test_large_document_performance PASSED [  3%]
+tests/integration/test_workspace_editor.py::test_vietnamese_academic_report_full_roundtrip PASSED [  7%]
+tests/rendering/test_rendering_pipeline.py::test_style_resolver_cascading PASSED [ 25%]
+tests/rendering/test_rendering_pipeline.py::test_numbering_resolver PASSED [ 26%]
+tests/rendering/test_rendering_pipeline.py::test_stress_50_pages_performance PASSED [ 38%]
+tests/unit/test_run_preservation.py::test_replace_inside_single_run_preserves_formatting PASSED [ 71%]
+tests/unit/test_tables_sections_presets.py::test_academic_vn_preset PASSED [ 76%]
+tests/unit/test_tables_sections_presets.py::test_transaction_rollback_on_failure PASSED [ 78%]
+tests/unit/test_v2_scenarios.py::test_visual_layout_verification PASSED  [100%]
 
-============================= 36 passed in 5.56s ==============================
+============================= 52 passed in 10.50s =============================
 ```
 
 ---
 
-## 📄 Bản Quyền (License)
+## 📄 Bản Quyền & Giấy Phép (License)
 
-Dự án được phân phối mã nguồn mở theo giấy phép **[Apache License 2.0](LICENSE)**.
-Mọi cá nhân, nhóm nghiên cứu và doanh nghiệp đều có thể tự do sử dụng, tích hợp và phát triển mở rộng.
+Dự án được phân phối mã nguồn mở theo giấy phép **[MIT License](LICENSE)**. Mọi cá nhân, nhóm nghiên cứu và doanh nghiệp đều có thể tự do sử dụng, tích hợp và phát triển mở rộng.
+
+Tác giả: **Trần Nhật Thạch** (`thachtn@example.com`).

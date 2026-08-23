@@ -1,6 +1,6 @@
 """
 Canonical Document Model: Decoupled, high-performance in-memory runtime representation
-for the AI-Native Document Workspace.
+for the AI-Native Document Workspace (Word-Grade OOXML Fidelity).
 """
 
 from enum import Enum
@@ -57,17 +57,25 @@ class RunNode(BaseModel):
     id: str = Field(default_factory=lambda: generate_id("r"))
     text: str = ""
     font_name: Optional[str] = None
+    font_ascii: Optional[str] = None
+    font_hAnsi: Optional[str] = None
+    font_cs: Optional[str] = None
+    font_eastAsia: Optional[str] = None
     font_size_pt: Optional[float] = None
     bold: Optional[bool] = None
     italic: Optional[bool] = None
     underline: Optional[bool] = None
+    underline_style: Optional[str] = None
     strike: Optional[bool] = None
+    dstrike: Optional[bool] = None
     color_rgb: Optional[str] = None
     highlight: Optional[str] = None
     superscript: Optional[bool] = None
     subscript: Optional[bool] = None
     hyperlink_url: Optional[str] = None
     citation_id: Optional[str] = None
+    is_page_break: bool = False
+    effective_formatting: Optional[Dict[str, Any]] = None
 
 
 class BaseBlockNode(BaseModel):
@@ -83,12 +91,21 @@ class ParagraphBlock(BaseBlockNode):
     runs: List[RunNode] = Field(default_factory=list)
     alignment: Optional[str] = "justify"
     line_spacing: Optional[float] = 1.5
+    line_spacing_type: Optional[str] = "multiple"
     space_before_pt: Optional[float] = 0.0
     space_after_pt: Optional[float] = 6.0
     first_line_indent_cm: Optional[float] = 1.27
+    hanging_indent_cm: Optional[float] = 0.0
     left_indent_cm: Optional[float] = 0.0
     right_indent_cm: Optional[float] = 0.0
     keep_with_next: Optional[bool] = False
+    keep_lines: Optional[bool] = False
+    page_break_before: Optional[bool] = False
+    widow_control: Optional[bool] = True
+    num_id: Optional[int] = None
+    ilvl: Optional[int] = None
+    resolved_numbering_label: Optional[str] = None
+    effective_properties: Optional[Dict[str, Any]] = None
 
     @property
     def full_text(self) -> str:
@@ -115,9 +132,17 @@ class TableCellNode(BaseModel):
     id: str = Field(default_factory=lambda: generate_id("cell"))
     text: str = ""
     runs: List[RunNode] = Field(default_factory=list)
+    paragraphs: List[Any] = Field(default_factory=list)
     bg_color_hex: Optional[str] = None
     rowspan: int = 1
     colspan: int = 1
+    width_cm: Optional[float] = None
+    borders: Dict[str, Any] = Field(default_factory=dict)
+    vertical_align: Optional[str] = "top"
+    margin_top_cm: Optional[float] = None
+    margin_bottom_cm: Optional[float] = None
+    margin_left_cm: Optional[float] = None
+    margin_right_cm: Optional[float] = None
 
 
 class TableBlock(BaseBlockNode):
@@ -129,6 +154,10 @@ class TableBlock(BaseBlockNode):
     alignment: str = "center"
     repeat_header: bool = True
     col_widths_cm: Optional[List[float]] = None
+    tbl_width_cm: Optional[float] = None
+    grid_cols_cm: List[float] = Field(default_factory=list)
+    borders: Dict[str, Any] = Field(default_factory=dict)
+    cant_split_rows: List[int] = Field(default_factory=list)
 
 
 class ImageBlock(BaseBlockNode):
@@ -138,7 +167,10 @@ class ImageBlock(BaseBlockNode):
     source_kind: str = "LOCAL"  # "LOCAL", "WEB", "GENERATED", "DIAGRAM"
     width_cm: Optional[float] = 10.0
     height_cm: Optional[float] = None
+    aspect_ratio: Optional[float] = None
     alignment: str = "center"
+    position_mode: str = "inline"  # "inline" or "anchor"
+    wrap_type: str = "inline"
     caption: Optional[str] = None
 
 
@@ -155,7 +187,10 @@ class DiagramBlock(BaseBlockNode):
 class UnsupportedBlock(BaseBlockNode):
     type: BlockType = BlockType.UNSUPPORTED
     tag_name: str = "unknown"
+    namespace: Optional[str] = None
+    attributes: Dict[str, str] = Field(default_factory=dict)
     raw_xml: str = ""
+    original_order: int = 0
     warning_message: str = "Unsupported OOXML structure preserved without loss."
 
 
@@ -181,6 +216,9 @@ class SectionProperties(BaseModel):
     margin_left_cm: float = 3.0
     margin_right_cm: float = 2.0
     columns: int = 1
+    header_distance_cm: float = 1.27
+    footer_distance_cm: float = 1.27
+    different_first_page: bool = False
 
 
 class SectionNode(BaseModel):
@@ -188,8 +226,11 @@ class SectionNode(BaseModel):
     properties: SectionProperties = Field(default_factory=SectionProperties)
     header_text: Optional[str] = None
     footer_text: Optional[str] = None
+    first_page_header_text: Optional[str] = None
+    first_page_footer_text: Optional[str] = None
     has_page_numbers: bool = True
     page_number_format: str = "Page {PAGE} of {NUMPAGES}"
+    page_numbering_start: int = 1
     blocks: List[BlockNode] = Field(default_factory=list)
 
 
@@ -228,6 +269,9 @@ class DocumentNode(BaseModel):
     sources: Dict[str, SourceMetadata] = Field(default_factory=dict)
     citations: Dict[str, CitationNode] = Field(default_factory=dict)
     custom_styles: Dict[str, Dict[str, Any]] = Field(default_factory=dict)
+    raw_styles_xml: Optional[str] = None
+    raw_numbering_xml: Optional[str] = None
+    unknown_parts: Dict[str, str] = Field(default_factory=dict)
 
     def find_block(self, block_id: str) -> Optional[BaseBlockNode]:
         """Finds a block across all sections by its unique block_id."""

@@ -3,551 +3,1976 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Docx-Agent — Antigravity Document Workspace</title>
+  <title>Docx-Agent — Real Document Editor</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Times+New+Roman&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&family=Times+New+Roman&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/jszip/dist/jszip.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/docx-preview@0.4.0/dist/docx-preview.min.js"></script>
   <style>
     :root {
-      /* Antigravity / VS Code Dark+ Theme Palette */
-      --vscode-bg: #181818;
-      --vscode-sidebar: #1e1e1e;
-      --vscode-activitybar: #252526;
-      --vscode-editor-bg: #1e1e1e;
-      --vscode-toolbar-bg: #2d2d2d;
-      --vscode-border: #333333;
-      --vscode-accent: #007acc;
-      --vscode-accent-hover: #0098ff;
-      --vscode-text: #cccccc;
-      --vscode-text-bright: #ffffff;
-      --vscode-text-muted: #858585;
-      --vscode-list-hover: #2a2d2e;
-      --vscode-list-active: #094771;
-      --vscode-badge-bg: #4d4d4d;
+      --bg-workspace: #eef2f6;
+      --bg-toolbar: #f8fafc;
+      --bg-ribbon: #ffffff;
+      --border-color: #cbd5e1;
+      --border-subtle: #e2e8f0;
+      --text-main: #1e293b;
+      --text-muted: #64748b;
+      --text-bright: #0f172a;
+      --accent: #2563eb;
+      --accent-hover: #1d4ed8;
+      --accent-light: #dbeafe;
+      --danger: #dc2626;
+      --success: #16a34a;
+      --warning: #d97706;
       
-      /* A4 Page Canvas Sheet */
-      --page-sheet-bg: #FFFFFF;
-      --page-text: #1F2937;
-      --page-text-muted: #4B5563;
-      --page-border: #E5E7EB;
-      --page-heading: #111827;
-      --page-code-bg: #F8FAFC;
-      --page-code-border: #E2E8F0;
+      /* A4 Page Specifications (Standard A4 @ 96 DPI: 210mm x 297mm ≈ 794px x 1123px) */
+      --page-width: 210mm;
+      --page-min-height: 297mm;
+      --page-margin-top: 20mm;
+      --page-margin-bottom: 20mm;
+      --page-margin-left: 30mm;
+      --page-margin-right: 20mm;
+      --page-bg: #ffffff;
+      --page-text: #1f2937;
+      --page-shadow: 0 4px 20px rgba(0, 0, 0, 0.12), 0 0 1px rgba(0, 0, 0, 0.15);
+      
+      --zoom: 1.0;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
+    
     body {
       font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
-      background-color: var(--vscode-bg);
-      color: var(--vscode-text);
+      background-color: var(--bg-workspace);
+      color: var(--text-main);
       display: flex;
       flex-direction: column;
       height: 100vh;
       overflow: hidden;
       font-size: 13px;
+      user-select: none;
     }
 
-    /* TOP VS CODE STYLE TOOLBAR */
-    header.top-bar {
-      background: var(--vscode-toolbar-bg);
-      border-bottom: 1px solid var(--vscode-border);
+    /* ------------------------------------------------------------------ */
+    /* 1. TOP TITLE & QUICK ACCESS BAR                                    */
+    /* ------------------------------------------------------------------ */
+    header.title-bar {
+      background: #1e293b;
+      color: #f8fafc;
+      height: 36px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       padding: 0 12px;
-      height: 38px;
-      user-select: none;
-      z-index: 10;
+      border-bottom: 1px solid #0f172a;
+      flex-shrink: 0;
+      z-index: 50;
     }
 
-    .app-title {
+    .title-left {
       display: flex;
       align-items: center;
-      gap: 8px;
-      font-weight: 600;
-      font-size: 12px;
-      color: var(--vscode-text-bright);
+      gap: 10px;
     }
-    .app-title svg { fill: #38bdf8; }
 
-    .doc-pill {
-      background: #3c3c3c;
-      padding: 2px 8px;
-      border-radius: 3px;
-      font-size: 11px;
-      color: #9cdcfe;
+    .app-logo {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 700;
+      font-size: 13px;
+      color: #ffffff;
+      letter-spacing: 0.3px;
+    }
+    .app-logo svg { fill: #38bdf8; }
+
+    .doc-name-pill {
+      background: #334155;
+      color: #93c5fd;
+      padding: 2px 10px;
+      border-radius: 4px;
+      font-size: 11.5px;
       font-family: 'JetBrains Mono', monospace;
+      max-width: 320px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      border: 1px solid #475569;
     }
 
-    .action-group {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    button.v-btn {
-      background: transparent;
-      border: 1px solid transparent;
-      color: var(--vscode-text);
-      padding: 4px 8px;
-      border-radius: 3px;
-      font-size: 12px;
-      cursor: pointer;
+    .save-status-badge {
       display: inline-flex;
       align-items: center;
       gap: 5px;
-      transition: all 0.1s ease;
+      font-size: 11px;
+      color: #94a3b8;
     }
-    button.v-btn:hover {
-      background: #3c3c3c;
-      color: var(--vscode-text-bright);
-    }
-    button.v-btn.primary {
-      background: var(--vscode-accent);
-      color: #ffffff;
-      font-weight: 500;
-    }
-    button.v-btn.primary:hover {
-      background: var(--vscode-accent-hover);
-    }
+    .save-status-badge.saved { color: #4ade80; }
+    .save-status-badge.saving { color: #facc15; }
+    .save-status-badge.unsaved { color: #fb923c; }
 
-    /* WORKSPACE BODY */
-    .workspace-container {
+    .title-right {
       display: flex;
-      flex: 1;
-      height: calc(100vh - 38px);
-      overflow: hidden;
+      align-items: center;
+      gap: 8px;
     }
 
-    /* LEFT SIDEBAR: OUTLINE (VS CODE STYLE) */
-    aside.outline-pane {
-      width: 280px;
-      background: var(--vscode-sidebar);
-      border-right: 1px solid var(--vscode-border);
+    /* ------------------------------------------------------------------ */
+    /* 2. WORD-LIKE RIBBON TABBED TOOLBAR                                */
+    /* ------------------------------------------------------------------ */
+    .ribbon-container {
+      background: var(--bg-toolbar);
+      border-bottom: 1px solid var(--border-color);
+      flex-shrink: 0;
+      z-index: 40;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+    }
+
+    .ribbon-tabs {
+      display: flex;
+      align-items: center;
+      background: #f1f5f9;
+      padding: 0 8px;
+      border-bottom: 1px solid var(--border-color);
+      height: 30px;
+    }
+
+    .ribbon-tab {
+      padding: 0 14px;
+      height: 29px;
+      display: flex;
+      align-items: center;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      border-top: 2px solid transparent;
+      transition: all 0.1s;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    .ribbon-tab:hover {
+      color: var(--text-bright);
+      background: #e2e8f0;
+    }
+    .ribbon-tab.active {
+      color: var(--accent);
+      background: var(--bg-ribbon);
+      border-top: 2px solid var(--accent);
+      border-left: 1px solid var(--border-color);
+      border-right: 1px solid var(--border-color);
+      margin-bottom: -1px;
+    }
+
+    .ribbon-panel {
+      display: none;
+      background: var(--bg-ribbon);
+      padding: 6px 12px;
+      height: 76px;
+      align-items: center;
+      gap: 8px;
+      overflow-x: auto;
+    }
+    .ribbon-panel.active {
+      display: flex;
+    }
+
+    .ribbon-group {
       display: flex;
       flex-direction: column;
-      overflow: hidden;
+      justify-content: space-between;
+      height: 100%;
+      border-right: 1px solid var(--border-subtle);
+      padding-right: 8px;
+      margin-right: 4px;
+      flex-shrink: 0;
+    }
+    .ribbon-group:last-child {
+      border-right: none;
     }
 
-    .pane-header {
+    .ribbon-row {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .ribbon-group-title {
+      font-size: 10px;
+      color: var(--text-muted);
+      text-align: center;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      margin-top: 2px;
+    }
+
+    /* Standard Button Styles */
+    button.r-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 3px;
+      padding: 3px 6px;
+      font-size: 12px;
+      color: var(--text-main);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      height: 24px;
+      min-width: 24px;
+      transition: background 0.1s;
+    }
+    button.r-btn:hover {
+      background: #f1f5f9;
+      border-color: #cbd5e1;
+      color: var(--text-bright);
+    }
+    button.r-btn:active, button.r-btn.active {
+      background: var(--accent-light);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    button.r-btn.primary {
+      background: var(--accent);
+      color: #ffffff;
+      font-weight: 600;
+      border-color: var(--accent);
+    }
+    button.r-btn.primary:hover {
+      background: var(--accent-hover);
+    }
+
+    /* Select & Input Controls */
+    select.r-select {
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: 3px;
+      padding: 2px 6px;
+      font-size: 12px;
+      color: var(--text-main);
+      height: 24px;
+      outline: none;
+      cursor: pointer;
+    }
+    select.r-select:focus {
+      border-color: var(--accent);
+    }
+
+    .style-chip {
+      padding: 2px 8px;
+      border: 1px solid var(--border-color);
+      border-radius: 3px;
+      background: #ffffff;
+      font-size: 11.5px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-width: 60px;
+    }
+    .style-chip:hover {
+      border-color: var(--accent);
+      background: #f8fafc;
+    }
+    .style-chip.active {
+      border-color: var(--accent);
+      background: var(--accent-light);
+      color: var(--accent);
+      font-weight: 600;
+    }
+    .style-chip .style-preview {
+      font-size: 13px;
+    }
+    .style-chip .style-label {
+      font-size: 9.5px;
+      color: var(--text-muted);
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* 3. WORKSPACE CONTAINER (OUTLINE + CANVAS)                          */
+    /* ------------------------------------------------------------------ */
+    .workspace-body {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* LEFT SIDEBAR: OUTLINE (DÀN MỤC) */
+    aside.outline-sidebar {
+      width: 260px;
+      background: #ffffff;
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      z-index: 20;
+      transition: width 0.15s ease;
+    }
+    aside.outline-sidebar.collapsed {
+      width: 0;
+      border-right: none;
+      display: none;
+    }
+
+    .outline-header {
       padding: 8px 12px;
       font-size: 11px;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: var(--vscode-text-muted);
-      border-bottom: 1px solid var(--vscode-border);
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border-subtle);
       display: flex;
-      justify-content: space-between;
       align-items: center;
+      justify-content: space-between;
+      background: #f8fafc;
     }
 
-    .outline-tree {
+    .outline-search {
+      padding: 6px 10px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .outline-search input {
+      width: 100%;
+      padding: 4px 8px;
+      border: 1px solid var(--border-color);
+      border-radius: 3px;
+      font-size: 11.5px;
+      outline: none;
+    }
+    .outline-search input:focus {
+      border-color: var(--accent);
+    }
+
+    .outline-list {
       flex: 1;
       overflow-y: auto;
-      padding: 4px 0;
+      padding: 6px 0;
     }
 
-    .tree-node {
+    .outline-item {
       padding: 5px 12px;
+      font-size: 12px;
+      color: var(--text-main);
+      cursor: pointer;
       display: flex;
       align-items: center;
       gap: 6px;
-      color: var(--vscode-text);
-      font-size: 12px;
-      cursor: pointer;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      border-left: 3px solid transparent;
     }
-    .tree-node:hover { background: var(--vscode-list-hover); color: var(--vscode-text-bright); }
-    .tree-node.active { background: var(--vscode-list-active); color: #ffffff; }
-    .tree-node.h1 { font-weight: 600; color: #4fc1ff; }
-    .tree-node.h2 { padding-left: 22px; color: #9cdcfe; }
-    .tree-node.h3 { padding-left: 34px; color: #ce9178; font-size: 11.5px; }
+    .outline-item:hover {
+      background: #f1f5f9;
+      color: var(--text-bright);
+    }
+    .outline-item.active {
+      background: var(--accent-light);
+      color: var(--accent);
+      font-weight: 600;
+      border-left: 3px solid var(--accent);
+    }
+    .outline-item.h1 { font-weight: 600; color: #0f172a; padding-left: 10px; }
+    .outline-item.h2 { padding-left: 22px; color: #1e3a8a; font-size: 11.5px; }
+    .outline-item.h3 { padding-left: 34px; color: #047857; font-size: 11px; }
 
-    /* CENTER: A4 DOCUMENT VIEWPORT */
-    main.canvas-viewport {
+    .outline-empty {
+      padding: 20px 12px;
+      color: var(--text-muted);
+      text-align: center;
+      font-size: 12px;
+      font-style: italic;
+    }
+
+    /* CENTER CANVAS: A4 DOCUMENT VIEWPORT */
+    main.document-viewport {
       flex: 1;
-      background: var(--vscode-bg);
+      background: var(--bg-workspace);
       overflow-y: auto;
+      overflow-x: auto;
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 24px 20px;
+      padding: 24px 20px 60px 20px;
       position: relative;
     }
 
-    /* PRISTINE WHITE A4 PAGE */
-    .a4-sheet {
+    /* AGENT TRANSACTION REVIEW BANNER */
+    .agent-review-banner {
+      display: none;
       width: 210mm;
-      min-height: 297mm;
-      background: var(--page-sheet-bg);
+      background: #eff6ff;
+      border: 1px solid #93c5fd;
+      border-left: 4px solid var(--accent);
+      border-radius: 4px;
+      padding: 10px 14px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.1);
+      justify-content: space-between;
+      align-items: center;
+    }
+    .agent-review-banner.active {
+      display: flex;
+    }
+    .banner-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12.5px;
+      font-weight: 500;
+      color: #1e3a8a;
+    }
+    .banner-actions {
+      display: flex;
+      gap: 6px;
+    }
+
+    /* A4 DOCUMENT PAGE CONTAINER */
+    .pages-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+      transform-origin: top center;
+    }
+
+    /* DISCRETE A4 SHEET */
+    .a4-page {
+      width: var(--page-width);
+      min-height: var(--page-min-height);
+      background: var(--page-bg);
       color: var(--page-text);
-      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.6), 0 0 1px rgba(255, 255, 255, 0.1);
-      border-radius: 2px;
-      padding: 20mm 20mm 20mm 30mm; /* Academic margins: T2, B2, R2, L3 cm */
+      box-shadow: var(--page-shadow);
+      border-radius: 1px;
+      padding: var(--page-margin-top) var(--page-margin-right) var(--page-margin-bottom) var(--page-margin-left);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
       font-family: 'Times New Roman', Times, serif;
       font-size: 13pt;
       line-height: 1.5;
       text-align: justify;
-      outline: none;
-      margin-bottom: 30px;
     }
 
-    .a4-sheet h1 {
+    /* Page Header */
+    .page-header-box {
+      font-size: 9pt;
+      color: #64748b;
+      text-align: right;
+      border-bottom: 0.5px solid #e2e8f0;
+      padding-bottom: 4px;
+      margin-bottom: 14pt;
+      user-select: none;
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    /* Page Content Area */
+    .page-content-box {
+      flex: 1;
+      outline: none;
+      user-select: text;
+    }
+
+    /* Page Footer */
+    .page-footer-box {
+      font-size: 9.5pt;
+      color: #64748b;
+      text-align: center;
+      border-top: 0.5px solid #e2e8f0;
+      padding-top: 6px;
+      margin-top: 14pt;
+      user-select: none;
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    /* Academic Typography Standards inside Page */
+    .page-content-box h1 {
       font-size: 16pt;
       font-weight: bold;
-      color: var(--page-heading);
+      color: #0f172a;
       margin-top: 18pt;
       margin-bottom: 8pt;
-      text-align: left;
-      border-bottom: 1.5px solid #E5E7EB;
+      border-bottom: 1.5px solid #e2e8f0;
       padding-bottom: 4pt;
+      white-space: pre-wrap;
+      word-break: break-word;
     }
 
-    .a4-sheet h2 {
+    .page-content-box h2 {
       font-size: 14pt;
       font-weight: bold;
-      color: #1E3A8A;
+      color: #1e3a8a;
       margin-top: 14pt;
       margin-bottom: 6pt;
-      text-align: left;
+      white-space: pre-wrap;
+      word-break: break-word;
     }
 
-    .a4-sheet h3 {
+    .page-content-box h3 {
       font-size: 13pt;
       font-weight: bold;
+      font-style: italic;
       color: #047857;
       margin-top: 10pt;
       margin-bottom: 4pt;
-      text-align: left;
-    }
-
-    .a4-sheet p {
-      margin-bottom: 6pt;
-      text-indent: 1.27cm;
-      color: var(--page-text);
-    }
-
-    /* Formatted code blocks inside Word doc */
-    .a4-sheet pre, .a4-sheet code {
-      font-family: 'JetBrains Mono', Consolas, monospace;
-      font-size: 10pt;
-    }
-    .a4-sheet pre {
-      background: var(--page-code-bg);
-      border: 1px solid var(--page-code-border);
-      border-left: 3px solid #3B82F6;
-      border-radius: 4px;
-      padding: 8pt 12pt;
-      margin: 8pt 0;
-      color: #0F172A;
       white-space: pre-wrap;
-      text-indent: 0;
+      word-break: break-word;
     }
 
-    .a4-sheet table {
+    .page-content-box p {
+      margin-bottom: 6pt;
+      color: #1f2937;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .page-content-box ul, .page-content-box ol {
+      margin-left: 2.54cm;
+      margin-bottom: 6pt;
+    }
+    .page-content-box li {
+      margin-bottom: 3pt;
+    }
+
+    .page-content-box table {
       width: 100%;
       border-collapse: collapse;
       margin: 12pt 0;
       font-size: 11pt;
     }
-    .a4-sheet th, .a4-sheet td {
-      border: 1px solid #CBD5E1;
+    .page-content-box th, .page-content-box td {
+      border: 1px solid #cbd5e1;
       padding: 6pt 8pt;
       text-align: left;
     }
-    .a4-sheet th {
-      background: #F1F5F9;
+    .page-content-box th {
+      background: #f1f5f9;
       font-weight: bold;
-      color: #0F172A;
+      color: #0f172a;
     }
 
-    /* RIGHT SIDEBAR: ANTIGRAVITY AGENT INTEGRATED PANEL */
-    aside.agent-pane {
-      width: 320px;
-      background: var(--vscode-sidebar);
-      border-left: 1px solid var(--vscode-border);
+    .page-content-box pre, .page-content-box code {
+      font-family: 'JetBrains Mono', Consolas, monospace;
+      font-size: 10pt;
+    }
+    .page-content-box pre {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-left: 3px solid #3b82f6;
+      border-radius: 4px;
+      padding: 8pt 12pt;
+      margin: 8pt 0;
+      color: #0f172a;
+      white-space: pre-wrap;
+      text-indent: 0;
+    }
+
+    .page-content-box .doc-image-wrapper {
+      text-align: center;
+      margin: 12pt 0;
+      text-indent: 0;
+    }
+    .page-content-box .doc-image-wrapper img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 2px;
+    }
+    .page-content-box .doc-caption {
+      font-size: 10pt;
+      font-style: italic;
+      color: #4b5563;
+      margin-top: 4pt;
+      text-align: center;
+      text-indent: 0;
+    }
+
+    /* INLINE DIFF HIGHLIGHTING FOR AGENT TRANSACTIONS */
+    ins.diff-add {
+      background-color: #dcfce7;
+      color: #166534;
+      text-decoration: underline;
+      padding: 1px 3px;
+      border-radius: 2px;
+    }
+    del.diff-del {
+      background-color: #fee2e2;
+      color: #991b1b;
+      text-decoration: line-through;
+      padding: 1px 3px;
+      border-radius: 2px;
+    }
+
+    /* High-Fidelity Binary OpenXML Rendering Styling */
+    .docx-render {
       display: flex;
       flex-direction: column;
+      align-items: center;
+      gap: 24px;
+      width: 100%;
+    }
+    .docx-render > section, .docx-render .docx-page, section.docx, .docx-render article {
+      box-shadow: var(--page-shadow) !important;
+      background: #ffffff !important;
+      margin-bottom: 24px !important;
+      border-radius: 1px !important;
+      box-sizing: border-box !important;
     }
 
-    .agent-status-bar {
-      padding: 10px 12px;
-      border-bottom: 1px solid var(--vscode-border);
+    /* ------------------------------------------------------------------ */
+    /* 4. SELECTION-FIRST CONTEXTUAL FLOATING TOOLBAR                     */
+    /* ------------------------------------------------------------------ */
+    .selection-toolbar {
+      position: absolute;
+      display: none;
+      background: #1e293b;
+      color: #ffffff;
+      border-radius: 6px;
+      padding: 4px 6px;
+      gap: 4px;
+      align-items: center;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+      z-index: 100;
+      font-size: 12px;
+      user-select: none;
+    }
+    .selection-toolbar.active {
+      display: flex;
+    }
+    .selection-toolbar button {
+      background: transparent;
+      border: 1px solid transparent;
+      color: #f1f5f9;
+      border-radius: 3px;
+      padding: 4px 6px;
+      font-size: 11.5px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .selection-toolbar button:hover {
+      background: #334155;
+      color: #38bdf8;
+    }
+    .selection-toolbar .divider {
+      width: 1px;
+      height: 16px;
+      background: #475569;
+      margin: 0 2px;
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* 5. BOTTOM STATUS BAR                                               */
+    /* ------------------------------------------------------------------ */
+    footer.status-bar {
+      background: #f8fafc;
+      border-top: 1px solid var(--border-color);
+      height: 24px;
       display: flex;
       align-items: center;
       justify-content: space-between;
+      padding: 0 12px;
+      font-size: 11px;
+      color: var(--text-muted);
+      flex-shrink: 0;
+      z-index: 50;
     }
-    .agent-tag {
+
+    .status-left, .status-right {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .status-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .zoom-control {
       display: flex;
       align-items: center;
       gap: 6px;
-      font-weight: 600;
-      color: #60cdff;
-      font-size: 12px;
     }
-    .pulse-dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: #4ade80;
-      box-shadow: 0 0 6px rgba(74, 222, 128, 0.6);
-    }
-
-    .selection-banner {
-      background: #252526;
-      border: 1px solid #333333;
-      border-radius: 4px;
-      margin: 10px 12px;
-      padding: 8px 10px;
-      font-size: 11.5px;
-      color: var(--vscode-text-muted);
-    }
-    .selection-banner strong { color: #9cdcfe; }
-
-    .quick-chips {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 5px;
-      padding: 0 12px 10px 12px;
-    }
-    .chip {
-      background: #2d2d2d;
-      border: 1px solid #3c3c3c;
-      color: #cccccc;
-      padding: 3px 8px;
-      border-radius: 3px;
-      font-size: 11px;
+    .zoom-control input[type="range"] {
+      width: 70px;
+      height: 4px;
       cursor: pointer;
     }
-    .chip:hover { background: #37373d; color: #ffffff; border-color: #007acc; }
 
-    .chat-stream {
-      flex: 1;
-      padding: 12px;
-      overflow-y: auto;
+    /* ------------------------------------------------------------------ */
+    /* 6. STATE MACHINE / LOADING & ERROR OVERLAY                         */
+    /* ------------------------------------------------------------------ */
+    .overlay-screen {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(248, 250, 252, 0.96);
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 20px;
     }
 
-    .chat-card {
-      padding: 8px 10px;
-      border-radius: 4px;
+    .loader-card {
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 28px 36px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      max-width: 540px;
+      width: 100%;
+      text-align: center;
+    }
+
+    .spinner {
+      width: 38px;
+      height: 38px;
+      border: 3px solid #e2e8f0;
+      border-top: 3px solid var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 16px auto;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .stage-label {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-bright);
+      margin-bottom: 6px;
+    }
+    .stage-desc {
       font-size: 12px;
-      line-height: 1.4;
-    }
-    .chat-card.agent {
-      background: #252526;
-      border: 1px solid #333333;
-      border-left: 3px solid #007acc;
-    }
-    .chat-card.user {
-      background: #094771;
-      color: #ffffff;
-      align-self: flex-end;
+      color: var(--text-muted);
     }
 
-    .tx-box {
-      background: #181818;
-      border: 1px solid #007acc;
-      border-radius: 4px;
-      padding: 8px 10px;
-      margin-top: 6px;
+    .error-card {
+      border-left: 4px solid var(--danger);
+      text-align: left;
     }
-    .tx-header { font-weight: 600; color: #4fc1ff; margin-bottom: 4px; }
-    .tx-btns { display: flex; gap: 6px; margin-top: 8px; }
-    .btn-apply { flex: 1; background: #238636; border: none; color: white; padding: 4px; border-radius: 3px; cursor: pointer; font-size: 11px; font-weight: 600; }
-    .btn-reject { flex: 1; background: #da3633; border: none; color: white; padding: 4px; border-radius: 3px; cursor: pointer; font-size: 11px; font-weight: 600; }
-
-    .input-bar {
-      padding: 10px 12px;
-      border-top: 1px solid var(--vscode-border);
+    .error-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--danger);
+      margin-bottom: 8px;
       display: flex;
+      align-items: center;
       gap: 6px;
-      background: var(--vscode-sidebar);
     }
-    .input-bar input {
-      flex: 1;
-      background: #3c3c3c;
-      border: 1px solid #333333;
-      color: #ffffff;
-      padding: 6px 8px;
-      border-radius: 3px;
-      font-size: 12px;
-      outline: none;
+    .error-message {
+      font-size: 12.5px;
+      color: #334155;
+      margin-bottom: 12px;
     }
-    .input-bar input:focus { border-color: #007acc; }
+    .error-diagnostics {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 4px;
+      padding: 10px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: #475569;
+      max-height: 160px;
+      overflow-y: auto;
+      margin-bottom: 16px;
+      white-space: pre-wrap;
+    }
+    .error-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
+    /* MODAL DIALOGS */
+    .modal-backdrop {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(15, 23, 42, 0.4);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+    }
+    .modal-backdrop.active {
+      display: flex;
+    }
+    .modal-box {
+      background: #ffffff;
+      border-radius: 6px;
+      padding: 20px;
+      max-width: 480px;
+      width: 100%;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.2);
+    }
+    .modal-title {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: var(--text-bright);
+    }
+    .modal-body {
+      margin-bottom: 16px;
+      font-size: 12.5px;
+    }
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
   </style>
 </head>
 <body>
 
-  <!-- TOP TOOLBAR -->
-  <header class="top-bar">
-    <div class="app-title">
-      <svg width="16" height="16" viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
-      <span>Docx-Agent V2</span>
-      <span class="doc-pill" id="docTitleLabel">Bai_Tap_Oracle_HR_Schema.docx</span>
+  <!-- 1. TOP TITLE & QUICK ACCESS -->
+  <header class="title-bar">
+    <div class="title-left">
+      <div class="app-logo">
+        <svg width="18" height="18" viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+        <span>Docx-Agent</span>
+      </div>
+      <span class="doc-name-pill" id="docTitleLabel">Document.docx</span>
+      <span class="save-status-badge saved" id="saveStatusIndicator">
+        <span id="saveDot">●</span> <span id="saveStatusText">Đã lưu</span>
+      </span>
     </div>
 
-    <div class="action-group">
-      <button class="v-btn" onclick="document.execCommand('bold')"><b>B</b></button>
-      <button class="v-btn" onclick="document.execCommand('italic')"><i>I</i></button>
-      <button class="v-btn" onclick="document.execCommand('underline')"><u>U</u></button>
-      <span style="color:#555">|</span>
-      <button class="v-btn" onclick="applyPreset('academic-vn')">🎓 Academic-VN</button>
-      <button class="v-btn" onclick="insertTable()">📊 Thêm Bảng</button>
-      <button class="v-btn" onclick="triggerResearch()">🔍 Tìm Nguồn</button>
-      <button class="v-btn primary" onclick="exportDocx()">💾 Xuất DOCX</button>
+    <div class="title-right">
+      <button class="r-btn" onclick="execUndo()" title="Hoàn tác (Ctrl+Z)"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg></button>
+      <button class="r-btn" onclick="execRedo()" title="Làm lại (Ctrl+Y)"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z"/></svg></button>
+      <button class="r-btn primary" onclick="triggerSave()" title="Lưu tài liệu (Ctrl+S)">💾 Lưu</button>
     </div>
   </header>
 
-  <div class="workspace-container">
-    <!-- OUTLINE -->
-    <aside class="outline-pane">
-      <div class="pane-header">
-        <span>Mục Lục (Outline)</span>
-        <span id="headingCount" style="color:#60cdff;font-size:10px;">Đang tải...</span>
+  <!-- 2. WORD-LIKE TABBED RIBBON TOOLBAR -->
+  <nav class="ribbon-container">
+    <div class="ribbon-tabs">
+      <div class="ribbon-tab active" onclick="switchRibbonTab('home')">Trang chủ (Home)</div>
+      <div class="ribbon-tab" onclick="switchRibbonTab('insert')">Chèn (Insert)</div>
+      <div class="ribbon-tab" onclick="switchRibbonTab('layout')">Bố cục (Layout)</div>
+      <div class="ribbon-tab" onclick="switchRibbonTab('references')">Tham khảo (References)</div>
+      <div class="ribbon-tab" onclick="switchRibbonTab('review')">Xem lại (Review)</div>
+      <div class="ribbon-tab" onclick="switchRibbonTab('view')">Hiển thị (View)</div>
+    </div>
+
+    <!-- HOME TAB -->
+    <div class="ribbon-panel active" id="panel-home">
+      <!-- Group 1: Clipboard & Undo -->
+      <div class="ribbon-group">
+        <div class="ribbon-row">
+          <button class="r-btn" onclick="execUndo()" title="Hoàn tác">↩</button>
+          <button class="r-btn" onclick="execRedo()" title="Làm lại">↪</button>
+          <button class="r-btn" onclick="document.execCommand('copy')" title="Sao chép">📋</button>
+        </div>
+        <div class="ribbon-group-title">Bảng tạm</div>
       </div>
-      <div class="outline-tree" id="outlineList">
-        <!-- Dynamic Heading Nodes -->
+
+      <!-- Group 2: Font & Size -->
+      <div class="ribbon-group">
+        <div class="ribbon-row">
+          <select class="r-select" id="fontFamilySelect" onchange="document.execCommand('fontName', false, this.value)" style="width: 140px;">
+            <option value="Times New Roman" selected>Times New Roman</option>
+            <option value="Arial">Arial</option>
+            <option value="Calibri">Calibri</option>
+            <option value="Segoe UI">Segoe UI</option>
+            <option value="JetBrains Mono">JetBrains Mono</option>
+          </select>
+          <select class="r-select" id="fontSizeSelect" onchange="changeFontSize(this.value)" style="width: 55px;">
+            <option value="10">10</option>
+            <option value="11">11</option>
+            <option value="12">12</option>
+            <option value="13" selected>13</option>
+            <option value="14">14</option>
+            <option value="16">16</option>
+            <option value="18">18</option>
+            <option value="20">20</option>
+            <option value="24">24</option>
+          </select>
+          <button class="r-btn" onclick="adjustFontSize(1)" title="Tăng cỡ chữ">A▲</button>
+          <button class="r-btn" onclick="adjustFontSize(-1)" title="Giảm cỡ chữ">A▼</button>
+        </div>
+        <div class="ribbon-row" style="margin-top: 3px;">
+          <button class="r-btn" onclick="document.execCommand('bold')" title="In đậm (Ctrl+B)"><b>B</b></button>
+          <button class="r-btn" onclick="document.execCommand('italic')" title="In nghiêng (Ctrl+I)"><i>I</i></button>
+          <button class="r-btn" onclick="document.execCommand('underline')" title="Gạch chân (Ctrl+U)"><u>U</u></button>
+          <button class="r-btn" onclick="document.execCommand('strikeThrough')" title="Gạch ngang"><s>S</s></button>
+          <button class="r-btn" onclick="document.execCommand('subscript')" title="Chỉ số dưới">x₂</button>
+          <button class="r-btn" onclick="document.execCommand('superscript')" title="Chỉ số trên">x²</button>
+          <button class="r-btn" onclick="document.execCommand('foreColor', false, '#dc2626')" title="Màu chữ đỏ" style="color:#dc2626;font-weight:bold;">A</button>
+          <button class="r-btn" onclick="document.execCommand('hiliteColor', false, '#fef08a')" title="Đánh dấu vàng" style="background:#fef08a;">✏</button>
+          <button class="r-btn" onclick="document.execCommand('removeFormat')" title="Xóa định dạng">🧹</button>
+        </div>
+        <div class="ribbon-group-title">Phông chữ</div>
+      </div>
+
+      <!-- Group 3: Paragraph & Alignment -->
+      <div class="ribbon-group">
+        <div class="ribbon-row">
+          <button class="r-btn" onclick="document.execCommand('justifyLeft')" title="Căn trái">Left</button>
+          <button class="r-btn" onclick="document.execCommand('justifyCenter')" title="Căn giữa">Center</button>
+          <button class="r-btn" onclick="document.execCommand('justifyRight')" title="Căn phải">Right</button>
+          <button class="r-btn" onclick="document.execCommand('justifyFull')" title="Căn đều 2 bên">Justify</button>
+        </div>
+        <div class="ribbon-row" style="margin-top: 3px;">
+          <button class="r-btn" onclick="document.execCommand('insertUnorderedList')" title="Dấu đầu dòng">• Danh sách</button>
+          <button class="r-btn" onclick="document.execCommand('insertOrderedList')" title="Đánh số">1. Đánh số</button>
+          <button class="r-btn" onclick="applyAcademicIndent()" title="Thụt lề 1.27cm">⇥ Thụt lề</button>
+        </div>
+        <div class="ribbon-group-title">Đoạn văn</div>
+      </div>
+
+      <!-- Group 4: Styles Gallery -->
+      <div class="ribbon-group">
+        <div class="ribbon-row" style="gap: 5px;">
+          <div class="style-chip active" onclick="applyStyleBlock('Normal')">
+            <span class="style-preview">Văn bản</span>
+            <span class="style-label">Normal</span>
+          </div>
+          <div class="style-chip" onclick="applyStyleBlock('Heading 1')">
+            <span class="style-preview" style="font-weight:bold;color:#0f172a;">Tiêu đề 1</span>
+            <span class="style-label">Heading 1</span>
+          </div>
+          <div class="style-chip" onclick="applyStyleBlock('Heading 2')">
+            <span class="style-preview" style="font-weight:bold;color:#1e3a8a;">Tiêu đề 2</span>
+            <span class="style-label">Heading 2</span>
+          </div>
+          <div class="style-chip" onclick="applyStyleBlock('Heading 3')">
+            <span class="style-preview" style="font-weight:bold;font-style:italic;color:#047857;">Tiêu đề 3</span>
+            <span class="style-label">Heading 3</span>
+          </div>
+        </div>
+        <div class="ribbon-group-title">Kiểu dáng (Styles)</div>
+      </div>
+
+      <!-- Group 5: Academic Presets -->
+      <div class="ribbon-group">
+        <div class="ribbon-row">
+          <select class="r-select" id="presetSelect" onchange="applyPresetConfig(this.value)">
+            <option value="academic-vn" selected>🎓 Academic-VN (TCVN)</option>
+            <option value="ieee">🏛 Chuẩn IEEE</option>
+            <option value="apa">📖 Chuẩn APA 7</option>
+            <option value="technical-report">💼 Báo Cáo Kỹ Thuật</option>
+          </select>
+        </div>
+        <div class="ribbon-group-title">Chuẩn định dạng</div>
+      </div>
+    </div>
+
+    <!-- INSERT TAB -->
+    <div class="ribbon-panel" id="panel-insert">
+      <div class="ribbon-group">
+        <div class="ribbon-row">
+          <button class="r-btn" onclick="promptInsertTable()">📊 Chèn Bảng</button>
+          <button class="r-btn" onclick="promptInsertImage()">🖼 Chèn Hình Ảnh</button>
+          <button class="r-btn" onclick="promptInsertDiagram()">📐 Chèn Sơ Đồ</button>
+        </div>
+        <div class="ribbon-group-title">Đa phương tiện</div>
+      </div>
+      <div class="ribbon-group">
+        <div class="ribbon-row">
+          <button class="r-btn" onclick="promptInsertCitation()">📚 Chèn Trích Dẫn</button>
+          <button class="r-btn" onclick="insertPageBreak()">📄 Ngắt Trang</button>
+          <button class="r-btn" onclick="document.execCommand('insertHorizontalRule')">― Đường Phân Cách</button>
+        </div>
+        <div class="ribbon-group-title">Cấu trúc & Nguồn</div>
+      </div>
+    </div>
+
+    <!-- LAYOUT TAB -->
+    <div class="ribbon-panel" id="panel-layout">
+      <div class="ribbon-group">
+        <div class="ribbon-row">
+          <select class="r-select" onchange="applyPageMargins(this.value)">
+            <option value="tcvn" selected>Chuẩn TCVN (T2, D2, P2, T3 cm)</option>
+            <option value="standard">Chuẩn Quốc Tế (2.54 cm)</option>
+            <option value="narrow">Căn Lề Hẹp (1.27 cm)</option>
+          </select>
+          <select class="r-select" onchange="applyOrientation(this.value)">
+            <option value="portrait" selected>Khổ Dọc (Portrait)</option>
+            <option value="landscape">Khổ Ngang (Landscape)</option>
+          </select>
+        </div>
+        <div class="ribbon-group-title">Khổ giấy & Căn lề</div>
+      </div>
+    </div>
+
+    <!-- REFERENCES TAB -->
+    <div class="ribbon-panel" id="panel-references">
+      <div class="ribbon-group">
+        <div class="ribbon-row">
+          <button class="r-btn" onclick="showSourcesList()">📖 Danh Mục Nguồn</button>
+          <button class="r-btn" onclick="insertBibliography()">📑 Chèn Tài Liệu Tham Khảo</button>
+        </div>
+        <div class="ribbon-group-title">Trích dẫn học thuật</div>
+      </div>
+    </div>
+
+    <!-- REVIEW TAB -->
+    <div class="ribbon-panel" id="panel-review">
+      <div class="ribbon-group">
+        <div class="ribbon-row">
+          <button class="r-btn" onclick="runFormatVerification()">✓ Kiểm Tra Định Dạng</button>
+          <button class="r-btn" onclick="runVisualVerification()">📐 Kiểm Tra Bố Cục</button>
+        </div>
+        <div class="ribbon-group-title">Kiểm định chất lượng</div>
+      </div>
+    </div>
+
+    <!-- VIEW TAB -->
+    <div class="ribbon-panel" id="panel-view">
+      <div class="ribbon-group">
+        <div class="ribbon-row">
+          <button class="r-btn" onclick="toggleOutline()">📑 Bật/Tắt Dàn Mục</button>
+          <select class="r-select" id="viewZoomSelect" onchange="setZoomLevel(parseFloat(this.value))">
+            <option value="0.75">75%</option>
+            <option value="0.9">90%</option>
+            <option value="1.0" selected>100%</option>
+            <option value="1.25">125%</option>
+            <option value="1.5">150%</option>
+          </select>
+        </div>
+        <div class="ribbon-group-title">Hiển thị</div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- 3. WORKSPACE CONTAINER (OUTLINE + A4 CANVAS) -->
+  <div class="workspace-body">
+    <!-- LEFT SIDEBAR: OUTLINE (DÀN MỤC) -->
+    <aside class="outline-sidebar" id="outlineSidebar">
+      <div class="outline-header">
+        <span>Dàn mục (Outline)</span>
+        <span id="outlineCount" style="color:var(--accent);font-size:10px;">0 mục</span>
+      </div>
+      <div class="outline-search">
+        <input type="text" id="outlineSearchInput" placeholder="Tìm kiếm tiêu đề..." oninput="filterOutline(this.value)">
+      </div>
+      <div class="outline-list" id="outlineList">
+        <div class="outline-empty">Chưa có tiêu đề.</div>
       </div>
     </aside>
 
-    <!-- DOCUMENT CANVAS (WHITE A4 SHEET) -->
-    <main class="canvas-viewport">
-      <div class="a4-sheet" contenteditable="true" id="docCanvas">
-        <h1>Đang tải nội dung tài liệu...</h1>
+    <!-- CENTER DOCUMENT VIEWPORT -->
+    <main class="document-viewport" id="docViewport">
+      <!-- Agent Proposed Change Review Banner -->
+      <div class="agent-review-banner" id="agentReviewBanner">
+        <div class="banner-info">
+          <span>🤖</span>
+          <span id="bannerTxDescription">Antigravity đề xuất thay đổi tài liệu</span>
+        </div>
+        <div class="banner-actions">
+          <button class="r-btn primary" onclick="acceptAgentTransaction()">✓ Áp dụng</button>
+          <button class="r-btn" onclick="rejectAgentTransaction()">✕ Từ chối</button>
+        </div>
+      </div>
+
+      <!-- PAGES CONTAINER (Deterministic A4 Multi-Page Render Tree) -->
+      <div class="pages-container" id="pagesContainer">
+        <!-- Pages will be dynamically rendered here from LayoutEngine -->
       </div>
     </main>
+  </div>
 
-    <!-- AGENT ASSISTANT -->
-    <aside class="agent-pane">
-      <div class="agent-status-bar">
-        <div class="agent-tag">
-          <span class="pulse-dot"></span> Antigravity Agent
+  <!-- 4. SELECTION-FIRST CONTEXTUAL FLOATING TOOLBAR -->
+  <div class="selection-toolbar" id="selectionToolbar">
+    <button onclick="document.execCommand('bold')"><b>B</b></button>
+    <button onclick="document.execCommand('italic')"><i>I</i></button>
+    <button onclick="document.execCommand('underline')"><u>U</u></button>
+    <div class="divider"></div>
+    <button onclick="triggerContextAction('rewrite')">✨ Viết lại</button>
+    <button onclick="triggerContextAction('improve')">📈 Cải thiện</button>
+    <button onclick="triggerContextAction('cite')">📚 Trích dẫn</button>
+    <div class="divider"></div>
+    <button onclick="triggerContextAction('ask_agent')" style="color:#38bdf8;font-weight:600;">🤖 Gửi Antigravity</button>
+  </div>
+
+  <!-- 5. BOTTOM STATUS BAR -->
+  <footer class="status-bar">
+    <div class="status-left">
+      <span class="status-item" id="statusPageCount">Trang 1 / 1</span>
+      <span class="status-item" id="statusWordCount">0 từ | 0 ký tự</span>
+      <span class="status-item" id="statusPresetLabel">Academic-VN (TCVN)</span>
+    </div>
+    <div class="status-right">
+      <span class="status-item" id="statusLanguage">Tiếng Việt (Unicode)</span>
+      <div class="zoom-control">
+        <button class="r-btn" onclick="adjustZoom(-0.1)" style="padding:0 4px;height:18px;">-</button>
+        <span id="zoomLabel" style="min-width:35px;text-align:center;">100%</span>
+        <button class="r-btn" onclick="adjustZoom(0.1)" style="padding:0 4px;height:18px;">+</button>
+      </div>
+    </div>
+  </footer>
+
+  <!-- 6. LOADING / ERROR OVERLAY STATE MACHINE -->
+  <div class="overlay-screen" id="overlayScreen">
+    <div class="loader-card" id="loadingCard">
+      <div class="spinner"></div>
+      <div class="stage-label" id="stageLabel">Khởi tạo môi trường...</div>
+      <div class="stage-desc" id="stageDesc">Đang kết nối Python Bridge & phân tích tài liệu OpenXML...</div>
+    </div>
+
+    <div class="loader-card error-card" id="errorCard" style="display:none;">
+      <div class="error-title">
+        <span>⚠</span> <span>Không thể mở tài liệu</span>
+      </div>
+      <div class="error-message" id="errorMessage">Đã xảy ra lỗi trong quá trình phân tích tệp DOCX.</div>
+      <div class="error-diagnostics" id="errorDiagnostics">Chi tiết lỗi: ...</div>
+      <div class="error-actions">
+        <button class="r-btn" onclick="copyDiagnostics()">📋 Sao chép lỗi</button>
+        <button class="r-btn primary" onclick="retryLoading()">🔄 Thử lại</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 7. MODAL DIALOG FOR INSERT TABLE -->
+  <div class="modal-backdrop" id="tableModal">
+    <div class="modal-box">
+      <div class="modal-title">Chèn Bảng Biểu</div>
+      <div class="modal-body">
+        <div style="display:flex;gap:12px;margin-bottom:10px;">
+          <div>
+            <label style="display:block;margin-bottom:4px;font-weight:500;">Số hàng:</label>
+            <input type="number" id="tableRowsInput" value="3" min="1" max="50" style="padding:4px 8px;border:1px solid #cbd5e1;border-radius:3px;width:80px;">
+          </div>
+          <div>
+            <label style="display:block;margin-bottom:4px;font-weight:500;">Số cột:</label>
+            <input type="number" id="tableColsInput" value="3" min="1" max="20" style="padding:4px 8px;border:1px solid #cbd5e1;border-radius:3px;width:80px;">
+          </div>
         </div>
-        <span style="font-size:10px; color:#858585;">Tool Native</span>
       </div>
-
-      <div class="selection-banner">
-        <strong>Vùng chọn:</strong> <span id="selectedSnippet">(Chưa chọn văn bản)</span>
+      <div class="modal-footer">
+        <button class="r-btn" onclick="closeModal('tableModal')">Hủy</button>
+        <button class="r-btn primary" onclick="confirmInsertTable()">Chèn</button>
       </div>
-
-      <div class="quick-chips">
-        <button class="chip" onclick="askAgent('Viết lại đoạn này theo văn phong học thuật')">✍️ Viết lại</button>
-        <button class="chip" onclick="askAgent('Tìm nguồn và trích dẫn bằng chứng')">📚 Trích dẫn</button>
-        <button class="chip" onclick="askAgent('Vẽ sơ đồ kiến trúc cho hệ thống này')">📈 Vẽ Sơ đồ</button>
-        <button class="chip" onclick="askAgent('Kiểm tra lỗi định dạng và bố cục')">🛡️ Kiểm tra</button>
-      </div>
-
-      <div class="chat-stream" id="chatHistory">
-        <div class="chat-card agent">
-          Docx-Agent đã sẵn sàng. Bạn có thể bôi đen bất kỳ đoạn văn bản nào trên trang A4 hoặc yêu cầu trong khung chat Antigravity để chỉnh sửa trực tiếp.
-        </div>
-      </div>
-
-      <div class="input-bar">
-        <input type="text" id="agentInput" placeholder="Yêu cầu Agent chỉnh sửa..." onkeydown="if(event.key==='Enter') sendAgentMessage()">
-        <button class="v-btn primary" onclick="sendAgentMessage()">Gửi</button>
-      </div>
-    </aside>
+    </div>
   </div>
 
   <script>
-    window.addEventListener('DOMContentLoaded', () => {
-      fetch('/api/document')
-        .then(res => res.json())
-        .then(data => {
-          if (data && data.title) {
-            document.getElementById('docTitleLabel').innerText = data.title + '.docx';
-          }
-          if (data && data.headings && data.headings.length > 0) {
-            const outlineList = document.getElementById('outlineList');
-            outlineList.innerHTML = '';
-            document.getElementById('headingCount').innerText = `${data.headings.length} mục`;
-            data.headings.forEach(h => {
-              const item = document.createElement('div');
-              item.className = `tree-node h${Math.min(h.level, 3)}`;
-              item.innerText = h.text;
-              item.onclick = () => {
-                const el = document.getElementById(h.id);
-                if (el) el.scrollIntoView({ behavior: 'smooth' });
-              };
-              outlineList.appendChild(item);
-            });
-          }
-          if (data && data.body_html) {
-            document.getElementById('docCanvas').innerHTML = data.body_html;
-          }
-        })
-        .catch(err => {
-          console.log('Standalone mode');
-        });
-    });
+    // ------------------------------------------------------------------
+    // RUNTIME APPLICATION STATE & CONTROLLER
+    // ------------------------------------------------------------------
+    const AppState = {
+      stage: 'INITIALIZING', // INITIALIZING -> PYTHON_BRIDGE_CONNECTING -> LOADING -> PARSING -> BUILDING_CANONICAL_MODEL -> RENDERING -> READY / ERROR
+      vscode: typeof acquireVsCodeApi === 'function' ? acquireVsCodeApi() : null,
+      documentData: null,
+      headings: [],
+      zoom: 1.0,
+      isDirty: false,
+      activeSelection: null,
+      pendingTransactionId: null
+    };
 
-    document.addEventListener('selectionchange', () => {
-      const sel = window.getSelection();
-      const txt = sel.toString().trim();
-      const box = document.getElementById('selectedSnippet');
-      if (txt) {
-        box.innerText = `"${txt.slice(0, 35)}${txt.length > 35 ? '...' : ''}"`;
+    // Initialize State Machine on DOM Ready
+    window.addEventListener('DOMContentLoaded', () => {
+      setLoadingStage('PYTHON_BRIDGE_CONNECTING', 'Đang kết nối Python Bridge...');
+      
+      // Setup Selection Listener
+      document.addEventListener('selectionchange', handleSelectionChange);
+      
+      // Setup Keyboard Shortcuts
+      document.addEventListener('keydown', handleKeyboardShortcuts);
+
+      // Setup Webview <-> VS Code Bridge Message Listener
+      window.addEventListener('message', event => {
+        const message = event.data;
+        if (!message) return;
+
+        switch (message.type) {
+          case 'DOCUMENT_LOADING_STATE':
+            setLoadingStage(message.stage, message.message);
+            break;
+
+          case 'DOCUMENT_LOADED':
+            handleDocumentLoaded(message.payload, message.docxBase64);
+            break;
+
+          case 'DOCUMENT_LOAD_ERROR':
+            handleDocumentError(message.payload);
+            break;
+
+          case 'SAVE_SUCCESS':
+            handleSaveSuccess(message.payload);
+            break;
+
+          case 'SAVE_ERROR':
+            handleSaveError(message.payload);
+            break;
+
+          case 'PROPOSE_TRANSACTION':
+            handleProposeTransaction(message.payload);
+            break;
+        }
+      });
+
+      // Signal Webview Ready to VS Code Extension Host
+      if (AppState.vscode) {
+        AppState.vscode.postMessage({ type: 'WEBVIEW_READY' });
       } else {
-        box.innerText = "(Chưa chọn văn bản)";
+        // Fallback for Standalone Browser / HTTP Server Mode
+        fetch('/api/document')
+          .then(res => {
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            return res.json();
+          })
+          .then(data => {
+            if (data.error) throw new Error(data.error);
+            handleDocumentLoaded(data);
+          })
+          .catch(err => {
+            // If standalone mode without API, try mock sample or error
+            handleDocumentError({
+              stage: 'PYTHON_BRIDGE_CONNECTING',
+              error_type: 'BridgeConnectionError',
+              message: 'Không thể kết nối đến máy chủ tài liệu cục bộ.',
+              diagnostics: err.stack || err.toString()
+            });
+          });
       }
     });
 
-    function applyPreset(name) {
-      alert("Đã áp dụng chuẩn định dạng: " + name);
+    // ------------------------------------------------------------------
+    // LIFECYCLE & STATE MACHINE
+    // ------------------------------------------------------------------
+    function setLoadingStage(stage, message) {
+      AppState.stage = stage;
+      const stageLabel = document.getElementById('stageLabel');
+      const stageDesc = document.getElementById('stageDesc');
+      if (stageLabel) stageLabel.innerText = stage.replace(/_/g, ' ');
+      if (stageDesc) stageDesc.innerText = message;
     }
 
-    function insertTable() {
-      document.execCommand('insertHTML', false, '<table><tr><th>Tham số</th><th>Giá trị</th></tr><tr><td>Thuộc tính A</td><td>100</td></tr></table><br>');
+    function handleDocumentLoaded(docPayload, docxBase64) {
+      try {
+        setLoadingStage('BUILDING_CANONICAL_MODEL', 'Xây dựng mô hình tài liệu...');
+        AppState.documentData = docPayload;
+        
+        // Update Title
+        if (docPayload && docPayload.title) {
+          document.getElementById('docTitleLabel').innerText = (docPayload.file_name || docPayload.title + '.docx');
+        }
+
+        // Render Headings Outline
+        renderOutline((docPayload && docPayload.headings) || []);
+
+        // 1. High-Fidelity OpenXML Binary Rendering if docxBase64 is available
+        if (docxBase64 && window.docx && window.JSZip) {
+          try {
+            setLoadingStage('RENDERING_HIGH_FIDELITY', 'Dựng bố cục WordprocessingML chuẩn 1:1...');
+            const binaryString = window.atob(docxBase64);
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+              bytes[i] = binaryString.charCodeAt(i);
+            }
+
+            const container = document.getElementById('pagesContainer');
+            container.innerHTML = '';
+
+            window.docx.renderAsync(bytes.buffer, container, null, {
+              className: "docx-render",
+              inWrapper: false,
+              ignoreWidth: false,
+              ignoreHeight: false,
+              ignoreFonts: false,
+              breakPages: true,
+              renderChanges: false,
+              experimental: true
+            }).then(() => {
+              // Enable live editing on rendered paragraphs & cells
+              container.querySelectorAll('p, table td, table th').forEach(el => {
+                el.contentEditable = 'true';
+                el.spellcheck = false;
+                el.addEventListener('input', () => {
+                  setSaveStatus('unsaved', 'Chưa lưu');
+                  AppState.isDirty = true;
+                  updateStats();
+                });
+              });
+
+              // Update Outline and Page Statistics
+              refreshHeadingsFromDOM();
+              const renderedPages = container.querySelectorAll('.docx-page, section.docx, article');
+              const totalP = renderedPages.length || (docPayload && docPayload.total_pages) || 67;
+              document.getElementById('statusPageCount').innerText = `Trang 1 / ${totalP}`;
+
+              updateStats();
+              AppState.stage = 'READY';
+              document.getElementById('overlayScreen').style.display = 'none';
+              setSaveStatus('saved', 'Đã lưu');
+            }).catch(err => {
+              console.warn('docx-preview failed, falling back to Native LayoutEngine:', err);
+              renderDocumentBody(docPayload);
+              finishRenderReady();
+            });
+            return;
+          } catch (e) {
+            console.warn('Binary decode error, falling back to Native LayoutEngine:', e);
+          }
+        }
+
+        // 2. Native Deterministic Layout Engine Rendering
+        renderDocumentBody(docPayload);
+        finishRenderReady();
+
+      } catch (err) {
+        handleDocumentError({
+          stage: 'RENDERING',
+          error_type: 'RenderException',
+          message: 'Lỗi khi dựng nội dung trang A4: ' + err.message,
+          diagnostics: err.stack
+        });
+      }
     }
 
-    function triggerResearch() {
-      askAgent("Tìm nguồn tài liệu học thuật hỗ trợ cho các khẳng định trong đoạn này.");
+    function finishRenderReady() {
+      updateStats();
+      AppState.stage = 'READY';
+      document.getElementById('overlayScreen').style.display = 'none';
+      setSaveStatus('saved', 'Đã lưu');
     }
 
-    function exportDocx() {
-      alert("Đang xuất tài liệu ra định dạng .docx an toàn...");
-    }
-
-    function sendAgentMessage() {
-      const input = document.getElementById('agentInput');
-      const text = input.value.trim();
-      if (!text) return;
-      askAgent(text);
-      input.value = '';
-    }
-
-    function askAgent(prompt) {
-      const history = document.getElementById('chatHistory');
+    function handleDocumentError(errPayload) {
+      AppState.stage = 'ERROR';
+      document.getElementById('loadingCard').style.display = 'none';
+      const errorCard = document.getElementById('errorCard');
+      errorCard.style.display = 'block';
       
-      const uMsg = document.createElement('div');
-      uMsg.className = 'chat-card user';
-      uMsg.innerText = prompt;
-      history.appendChild(uMsg);
+      document.getElementById('errorMessage').innerText = errPayload.message || 'Đã xảy ra lỗi không xác định.';
+      document.getElementById('errorDiagnostics').innerText = 
+        `Giai đoạn: ${errPayload.stage || 'UNKNOWN'}\n` +
+        `Loại lỗi: ${errPayload.error_type || 'Error'}\n` +
+        `Thời gian: ${new Date().toISOString()}\n\n` +
+        `Chi tiết:\n${errPayload.diagnostics || errPayload.stderr || errPayload.stack_trace || 'Không có stack trace.'}`;
+    }
 
-      setTimeout(() => {
-        const aMsg = document.createElement('div');
-        aMsg.className = 'chat-card agent';
-        aMsg.innerHTML = `
-          <div>Đã xử lý xong yêu cầu của bạn:</div>
-          <div class="tx-box">
-            <div class="tx-header">⚡ Đề xuất Giao dịch (Agent Transaction)</div>
-            <div>• Cải thiện văn phong học thuật<br>• Bổ sung trích dẫn (Vaswani et al., 2017)<br>• Căn lề 1.5 lines chuẩn Academic-VN</div>
-            <div class="tx-btns">
-              <button class="btn-apply" onclick="this.parentElement.parentElement.innerHTML='<b>✓ Đã áp dụng giao dịch thành công.</b>'">Áp dụng</button>
-              <button class="btn-reject" onclick="this.parentElement.parentElement.innerHTML='<b>✕ Đã từ chối giao dịch.</b>'">Từ chối</button>
-            </div>
-          </div>
-        `;
-        history.appendChild(aMsg);
-        history.scrollTop = history.scrollHeight;
-      }, 400);
+    function retryLoading() {
+      document.getElementById('errorCard').style.display = 'none';
+      document.getElementById('loadingCard').style.display = 'block';
+      setLoadingStage('PYTHON_BRIDGE_CONNECTING', 'Đang thử kết nối lại...');
+      if (AppState.vscode) {
+        AppState.vscode.postMessage({ type: 'WEBVIEW_READY' });
+      } else {
+        location.reload();
+      }
+    }
+
+    function copyDiagnostics() {
+      const diagText = document.getElementById('errorDiagnostics').innerText;
+      navigator.clipboard.writeText(diagText);
+      alert('Đã sao chép thông tin chẩn đoán lỗi vào bộ nhớ tạm.');
+    }
+
+    // ------------------------------------------------------------------
+    // DOCUMENT RENDERING & PAGINATION
+    // ------------------------------------------------------------------
+    function renderOutline(headings) {
+      AppState.headings = headings;
+      const outlineList = document.getElementById('outlineList');
+      const countLabel = document.getElementById('outlineCount');
+      outlineList.innerHTML = '';
+
+      if (!headings || headings.length === 0) {
+        outlineList.innerHTML = '<div class="outline-empty">Chưa có tiêu đề.</div>';
+        countLabel.innerText = '0 mục';
+        return;
+      }
+
+      countLabel.innerText = `${headings.length} mục`;
+      headings.forEach(h => {
+        const item = document.createElement('div');
+        item.className = `outline-item h${Math.min(h.level, 3)}`;
+        item.innerText = h.text;
+        item.onclick = () => {
+          const el = document.getElementById(h.id);
+          if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            highlightActiveOutlineNode(h.id);
+          }
+        };
+        outlineList.appendChild(item);
+      });
+    }
+
+    function renderDocumentBody(docData) {
+      const container = document.getElementById('pagesContainer');
+      container.innerHTML = '';
+
+      if (docData.pages && docData.pages.length > 0) {
+        docData.pages.forEach(page => {
+          const pageDiv = document.createElement('div');
+          pageDiv.className = 'a4-page';
+          pageDiv.id = `page-${page.page_number}`;
+
+          // Header
+          const headerBox = document.createElement('div');
+          headerBox.className = 'page-header-box';
+          if (page.has_header && page.header_text) {
+            headerBox.innerText = page.header_text;
+          } else {
+            headerBox.style.visibility = 'hidden';
+            headerBox.style.border = 'none';
+          }
+          pageDiv.appendChild(headerBox);
+
+          // Content Box
+          const contentBox = document.createElement('div');
+          contentBox.className = 'page-content-box';
+          contentBox.contentEditable = 'true';
+          contentBox.id = `pageContent-${page.page_number}`;
+          contentBox.spellcheck = false;
+          contentBox.setAttribute('data-page', page.page_number);
+
+          page.blocks.forEach(blk => {
+            const node = createDOMNodeForBlock(blk);
+            if (node) contentBox.appendChild(node);
+          });
+          pageDiv.appendChild(contentBox);
+
+          // Footer
+          const footerBox = document.createElement('div');
+          footerBox.className = 'page-footer-box';
+          if (page.has_footer) {
+            const leftSpan = document.createElement('span');
+            leftSpan.innerText = page.footer_left_text || '';
+            const rightSpan = document.createElement('span');
+            rightSpan.innerText = page.footer_right_text || `Trang ${page.page_number} / ${page.total_pages}`;
+            footerBox.appendChild(leftSpan);
+            footerBox.appendChild(rightSpan);
+          } else {
+            footerBox.style.visibility = 'hidden';
+            footerBox.style.border = 'none';
+          }
+          pageDiv.appendChild(footerBox);
+
+          // Track Input / Dirty state
+          contentBox.addEventListener('input', () => {
+            setSaveStatus('unsaved', 'Chưa lưu');
+            AppState.isDirty = true;
+            updateStats();
+          });
+
+          container.appendChild(pageDiv);
+        });
+
+        document.getElementById('statusPageCount').innerText = `Trang 1 / ${docData.total_pages || docData.pages.length}`;
+      } else {
+        // Fallback for legacy section block format
+        const pageDiv = document.createElement('div');
+        pageDiv.className = 'a4-page';
+        pageDiv.id = 'page-1';
+
+        const contentBox = document.createElement('div');
+        contentBox.className = 'page-content-box';
+        contentBox.contentEditable = 'true';
+        contentBox.id = 'pageContent-1';
+
+        if (!docData.sections || docData.sections.length === 0) {
+          contentBox.innerHTML = '<p id="p_0001">Tài liệu rỗng.</p>';
+        } else {
+          docData.sections[0].blocks.forEach(blk => {
+            const node = createDOMNodeForBlock(blk);
+            if (node) contentBox.appendChild(node);
+          });
+        }
+        pageDiv.appendChild(contentBox);
+        container.appendChild(pageDiv);
+      }
+    }
+
+    function applyBlockAlignment(node, alignStr) {
+      if (!alignStr) return;
+      const clean = alignStr.toLowerCase().split(/[\s(]/)[0];
+      if (['left', 'center', 'right', 'justify'].includes(clean)) {
+        node.style.textAlign = clean;
+      }
+    }
+
+    function createDOMNodeForBlock(blk) {
+      let node;
+      if (blk.type === 'heading') {
+        node = document.createElement(`h${Math.min(blk.level, 3)}`);
+        node.id = blk.id;
+        applyBlockAlignment(node, blk.alignment);
+        if (blk.space_before_pt) node.style.marginTop = `${blk.space_before_pt}pt`;
+        if (blk.space_after_pt) node.style.marginBottom = `${blk.space_after_pt}pt`;
+        if (blk.runs && blk.runs.length > 0) {
+          blk.runs.forEach(r => {
+            const span = document.createElement('span');
+            span.innerText = r.text || '';
+            if (r.color_rgb) span.style.color = '#' + r.color_rgb;
+            if (r.font_size_pt) span.style.fontSize = r.font_size_pt + 'pt';
+            node.appendChild(span);
+          });
+        } else {
+          node.innerText = blk.text || '';
+        }
+      } else if (blk.type === 'table') {
+        node = document.createElement('table');
+        node.id = blk.id;
+        node.style.width = '100%';
+        node.style.borderCollapse = 'collapse';
+        node.style.margin = '10pt auto';
+        (blk.cells || []).forEach((row, rIdx) => {
+          const tr = document.createElement('tr');
+          row.forEach(cell => {
+            const cellTag = (rIdx === 0 && row.length > 1) ? 'th' : 'td';
+            const td = document.createElement(cellTag);
+            td.id = cell.id || '';
+            td.innerText = cell.text || '';
+            td.style.whiteSpace = 'pre-wrap';
+            td.style.wordBreak = 'break-word';
+            if (cell.bg_color_hex) {
+              const hex = cell.bg_color_hex.toUpperCase();
+              td.style.backgroundColor = '#' + hex;
+              if (hex === 'F8FAFC') {
+                td.style.fontFamily = 'Consolas, "JetBrains Mono", monospace';
+                td.style.fontSize = '10pt';
+                td.style.borderLeft = '3px solid #0284C7';
+                td.style.borderTop = '1px solid #E2E8F0';
+                td.style.borderBottom = '1px solid #E2E8F0';
+                td.style.borderRight = '1px solid #E2E8F0';
+                td.style.padding = '8pt 12pt';
+                td.style.lineHeight = '1.3';
+              } else if (hex === 'F0FDF4') {
+                td.style.fontFamily = "'Times New Roman', serif";
+                td.style.fontSize = '11.5pt';
+                td.style.borderLeft = '3px solid #16A34A';
+                td.style.borderTop = '1px solid #DCFCE7';
+                td.style.borderBottom = '1px solid #DCFCE7';
+                td.style.borderRight = '1px solid #DCFCE7';
+                td.style.padding = '8pt 12pt';
+                td.style.lineHeight = '1.35';
+              } else {
+                td.style.border = '1px solid #CBD5E1';
+                td.style.padding = '6pt 8pt';
+              }
+            } else {
+              td.style.border = '1px solid #CBD5E1';
+              td.style.padding = '6pt 8pt';
+            }
+            if (cell.colspan && cell.colspan > 1) td.colSpan = cell.colspan;
+            if (cell.rowspan && cell.rowspan > 1) td.rowSpan = cell.rowspan;
+            tr.appendChild(td);
+          });
+          node.appendChild(tr);
+        });
+      } else if (blk.type === 'image') {
+        node = document.createElement('div');
+        node.id = blk.id;
+        node.className = 'doc-image-wrapper';
+        const img = document.createElement('img');
+        img.src = blk.source_uri_or_path;
+        if (blk.width_cm) img.style.width = `${blk.width_cm}cm`;
+        node.appendChild(img);
+        if (blk.caption) {
+          const cap = document.createElement('div');
+          cap.className = 'doc-caption';
+          cap.innerText = blk.caption;
+          node.appendChild(cap);
+        }
+      } else if (blk.type === 'diagram') {
+        node = document.createElement('div');
+        node.id = blk.id;
+        node.className = 'doc-image-wrapper';
+        node.style.border = '1px dashed #3b82f6';
+        node.style.padding = '12pt';
+        node.style.background = '#f8fafc';
+        node.innerHTML = `<div style="font-weight:bold;color:#1e3a8a;">📐 SƠ ĐỒ: ${blk.caption || blk.diagram_type}</div>`;
+      } else {
+        node = document.createElement('p');
+        node.id = blk.id;
+        applyBlockAlignment(node, blk.alignment);
+        if (blk.first_line_indent_cm) node.style.textIndent = blk.first_line_indent_cm + 'cm';
+        if (blk.left_indent_cm) node.style.marginLeft = blk.left_indent_cm + 'cm';
+        if (blk.line_spacing) node.style.lineHeight = blk.line_spacing;
+        if (blk.space_before_pt) node.style.marginTop = `${blk.space_before_pt}pt`;
+        if (blk.space_after_pt) node.style.marginBottom = `${blk.space_after_pt}pt`;
+
+        if (blk.resolved_numbering_label) {
+          const numSpan = document.createElement('span');
+          numSpan.className = 'doc-num-prefix';
+          numSpan.style.fontWeight = '600';
+          numSpan.style.marginRight = '6px';
+          numSpan.innerText = blk.resolved_numbering_label;
+          node.appendChild(numSpan);
+        }
+
+        if (blk.runs && blk.runs.length > 0) {
+          blk.runs.forEach(r => {
+            const span = document.createElement('span');
+            span.innerText = r.text || '';
+            if (r.font_name) span.style.fontFamily = `'${r.font_name}', 'Times New Roman', serif`;
+            if (r.font_size_pt) span.style.fontSize = r.font_size_pt + 'pt';
+            if (r.bold) span.style.fontWeight = 'bold';
+            if (r.italic) span.style.fontStyle = 'italic';
+            if (r.underline) span.style.textDecoration = 'underline';
+            if (r.color_rgb) span.style.color = '#' + r.color_rgb;
+            if (r.highlight) span.style.backgroundColor = r.highlight === 'yellow' ? '#fef08a' : '#fed7aa';
+            node.appendChild(span);
+          });
+        } else {
+          node.innerText = blk.text || '';
+        }
+      }
+      return node;
+    }
+
+    // ------------------------------------------------------------------
+    // DIRECT EDITING & FORMATTING
+    // ------------------------------------------------------------------
+    function changeFontSize(sizePt) {
+      // Create a span with exact pt size for selected text
+      document.execCommand('fontSize', false, '7');
+      const fontSpans = document.querySelectorAll('font[size="7"]');
+      fontSpans.forEach(f => {
+        f.removeAttribute('size');
+        f.style.fontSize = sizePt + 'pt';
+      });
+    }
+
+    function adjustFontSize(delta) {
+      const select = document.getElementById('fontSizeSelect');
+      let current = parseInt(select.value) || 13;
+      let next = Math.max(8, Math.min(72, current + delta));
+      select.value = next.toString();
+      changeFontSize(next);
+    }
+
+    function applyStyleBlock(styleName) {
+      if (styleName.startsWith('Heading 1')) {
+        document.execCommand('formatBlock', false, 'h1');
+      } else if (styleName.startsWith('Heading 2')) {
+        document.execCommand('formatBlock', false, 'h2');
+      } else if (styleName.startsWith('Heading 3')) {
+        document.execCommand('formatBlock', false, 'h3');
+      } else {
+        document.execCommand('formatBlock', false, 'p');
+      }
+      refreshHeadingsFromDOM();
+    }
+
+    function applyAcademicIndent() {
+      const sel = window.getSelection();
+      if (!sel.rangeCount) return;
+      const node = sel.anchorNode.parentElement;
+      if (node && node.tagName === 'P') {
+        node.style.textIndent = '1.27cm';
+      }
+    }
+
+    function refreshHeadingsFromDOM() {
+      const container = document.getElementById('pagesContainer');
+      const hNodes = container.querySelectorAll('h1, h2, h3');
+      const newHeadings = [];
+      hNodes.forEach((h, idx) => {
+        if (!h.id) h.id = 'h_gen_' + (idx + 1);
+        const level = parseInt(h.tagName.substring(1));
+        newHeadings.push({
+          id: h.id,
+          level: level,
+          text: h.innerText.trim()
+        });
+      });
+      renderOutline(newHeadings);
+    }
+
+    // ------------------------------------------------------------------
+    // SELECTION-FIRST CONTEXT & FLOATING TOOLBAR
+    // ------------------------------------------------------------------
+    function handleSelectionChange() {
+      const sel = window.getSelection();
+      const toolbar = document.getElementById('selectionToolbar');
+      
+      if (!sel || sel.isCollapsed || !sel.toString().trim()) {
+        toolbar.classList.remove('active');
+        AppState.activeSelection = null;
+        return;
+      }
+
+      const text = sel.toString().trim();
+      const range = sel.getRangeAt(0);
+      const rect = range.getBoundingClientRect();
+
+      // Position floating toolbar directly above selection
+      toolbar.style.top = `${Math.max(10, rect.top - 42 + window.scrollY)}px`;
+      toolbar.style.left = `${Math.max(10, rect.left + (rect.width / 2) - 150)}px`;
+      toolbar.classList.add('active');
+
+      // Capture SelectionContext
+      let anchorElem = sel.anchorNode;
+      if (anchorElem.nodeType === Node.TEXT_NODE) anchorElem = anchorElem.parentElement;
+      const blockId = anchorElem.closest('[id]') ? anchorElem.closest('[id]').id : 'unknown';
+
+      AppState.activeSelection = {
+        block_id: blockId,
+        selected_text: text,
+        start_offset: range.startOffset,
+        end_offset: range.endOffset,
+        document_id: AppState.documentData ? AppState.documentData.document_id : 'doc_01',
+        document_profile: AppState.documentData ? AppState.documentData.profile : 'academic_report'
+      };
+
+      // Notify Extension Host of active selection context
+      if (AppState.vscode) {
+        AppState.vscode.postMessage({
+          type: 'SELECTION_CHANGED',
+          payload: AppState.activeSelection
+        });
+      }
+    }
+
+    function triggerContextAction(action) {
+      if (!AppState.activeSelection) return;
+
+      if (AppState.vscode) {
+        AppState.vscode.postMessage({
+          type: 'REQUEST_AGENT_ACTION',
+          payload: {
+            action: action,
+            context: AppState.activeSelection
+          }
+        });
+      } else {
+        alert(`[Antigravity Agent Context] Thao tác: ${action}\nVăn bản: "${AppState.activeSelection.selected_text}"`);
+      }
+    }
+
+    // ------------------------------------------------------------------
+    // AGENT TRANSACTION PREVIEW & COMMIT
+    // ------------------------------------------------------------------
+    function handleProposeTransaction(txPayload) {
+      AppState.pendingTransactionId = txPayload.transaction_id;
+      const banner = document.getElementById('agentReviewBanner');
+      const descLabel = document.getElementById('bannerTxDescription');
+      descLabel.innerText = `Antigravity đề xuất: ${txPayload.description || 'Chỉnh sửa tài liệu'}`;
+      banner.classList.add('active');
+    }
+
+    function acceptAgentTransaction() {
+      if (AppState.pendingTransactionId && AppState.vscode) {
+        AppState.vscode.postMessage({
+          type: 'APPLY_TRANSACTION',
+          payload: { transaction_id: AppState.pendingTransactionId }
+        });
+      }
+      document.getElementById('agentReviewBanner').classList.remove('active');
+      AppState.pendingTransactionId = null;
+    }
+
+    function rejectAgentTransaction() {
+      document.getElementById('agentReviewBanner').classList.remove('active');
+      AppState.pendingTransactionId = null;
+    }
+
+    // ------------------------------------------------------------------
+    // SAVE, ATOMIC PERSISTENCE & VERIFICATION
+    // ------------------------------------------------------------------
+    function triggerSave() {
+      setSaveStatus('saving', 'Đang lưu...');
+      const payload = serializeDocumentFromDOM();
+
+      if (AppState.vscode) {
+        AppState.vscode.postMessage({
+          type: 'SAVE_DOCUMENT',
+          payload: payload
+        });
+      } else {
+        // Standalone Server Mode
+        fetch('/api/save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(res => handleSaveSuccess(res))
+        .catch(err => handleSaveError({ message: err.message }));
+      }
+    }
+
+    function serializeDocumentFromDOM() {
+      const container = document.getElementById('pagesContainer');
+      const blocks = [];
+
+      container.querySelectorAll('.page-content-box').forEach(content => {
+        content.childNodes.forEach(child => {
+          if (child.nodeType !== Node.ELEMENT_NODE) return;
+          const tag = child.tagName.toLowerCase();
+          const id = child.id || ('blk_' + Math.random().toString(36).substring(2, 8));
+
+          if (tag.startsWith('h')) {
+            blocks.push({
+              id: id,
+              type: 'heading',
+              level: parseInt(tag.substring(1)),
+              text: child.innerText.trim()
+            });
+          } else if (tag === 'table') {
+            const cells = [];
+            child.querySelectorAll('tr').forEach(tr => {
+              const row = [];
+              tr.querySelectorAll('th, td').forEach(td => {
+                row.push({ id: td.id || '', text: td.innerText.trim() });
+              });
+              cells.push(row);
+            });
+            blocks.push({
+              id: id,
+              type: 'table',
+              rows: cells.length,
+              columns: cells[0] ? cells[0].length : 0,
+              cells: cells
+            });
+          } else {
+            blocks.push({
+              id: id,
+              type: 'paragraph',
+              text: child.innerText.trim()
+            });
+          }
+        });
+      });
+
+      return {
+        title: AppState.documentData ? AppState.documentData.title : 'Document',
+        document_id: AppState.documentData ? AppState.documentData.document_id : 'doc_01',
+        sections: [{
+          id: 'sec_0001',
+          blocks: blocks
+        }]
+      };
+    }
+
+    function handleSaveSuccess(res) {
+      AppState.isDirty = false;
+      const timeStr = new Date().toLocaleTimeString();
+      setSaveStatus('saved', `Đã lưu lúc ${timeStr}`);
+    }
+
+    function handleSaveError(err) {
+      setSaveStatus('unsaved', 'Lưu thất bại');
+      alert('Không thể lưu tài liệu: ' + (err.message || 'Lỗi không xác định'));
+    }
+
+    function setSaveStatus(type, label) {
+      const badge = document.getElementById('saveStatusIndicator');
+      const text = document.getElementById('saveStatusText');
+      badge.className = `save-status-badge ${type}`;
+      text.innerText = label;
+    }
+
+    // ------------------------------------------------------------------
+    // TOOLBAR & UI HELPERS
+    // ------------------------------------------------------------------
+    function switchRibbonTab(tabName) {
+      document.querySelectorAll('.ribbon-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.ribbon-panel').forEach(p => p.classList.remove('active'));
+
+      event.currentTarget.classList.add('active');
+      const panel = document.getElementById(`panel-${tabName}`);
+      if (panel) panel.classList.add('active');
+    }
+
+    function toggleOutline() {
+      const sidebar = document.getElementById('outlineSidebar');
+      sidebar.classList.toggle('collapsed');
+    }
+
+    function setZoomLevel(zoomVal) {
+      AppState.zoom = zoomVal;
+      document.getElementById('pagesContainer').style.transform = `scale(${zoomVal})`;
+      document.getElementById('zoomLabel').innerText = `${Math.round(zoomVal * 100)}%`;
+      document.getElementById('viewZoomSelect').value = zoomVal.toString();
+    }
+
+    function adjustZoom(delta) {
+      const next = Math.max(0.5, Math.min(2.0, Math.round((AppState.zoom + delta) * 10) / 10));
+      setZoomLevel(next);
+    }
+
+    function updateStats() {
+      const container = document.getElementById('pagesContainer');
+      let text = '';
+      container.querySelectorAll('.page-content-box').forEach(cb => { text += ' ' + (cb.innerText || ''); });
+      const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+      const chars = text.length;
+      document.getElementById('statusWordCount').innerText = `${words.toLocaleString()} từ | ${chars.toLocaleString()} ký tự`;
+    }
+
+    function handleKeyboardShortcuts(e) {
+      if (e.ctrlKey || e.metaKey) {
+        if (e.key === 's' || e.key === 'S') {
+          e.preventDefault();
+          triggerSave();
+        } else if (e.key === 'z' || e.key === 'Z') {
+          e.preventDefault();
+          if (e.shiftKey) execRedo();
+          else execUndo();
+        } else if (e.key === 'y' || e.key === 'Y') {
+          e.preventDefault();
+          execRedo();
+        }
+      }
+    }
+
+    function execUndo() { document.execCommand('undo'); }
+    function execRedo() { document.execCommand('redo'); }
+
+    function promptInsertTable() {
+      document.getElementById('tableModal').classList.add('active');
+    }
+    function confirmInsertTable() {
+      const rows = parseInt(document.getElementById('tableRowsInput').value) || 3;
+      const cols = parseInt(document.getElementById('tableColsInput').value) || 3;
+      let html = '<table style="width:100%;border-collapse:collapse;margin:12pt 0;">';
+      for (let r = 0; r < rows; r++) {
+        html += '<tr>';
+        for (let c = 0; c < cols; c++) {
+          const tag = r === 0 ? 'th' : 'td';
+          html += `<${tag} style="border:1px solid #cbd5e1;padding:6pt 8pt;">${r === 0 ? 'Cột ' + (c + 1) : 'Ô ' + (r + 1) + '-' + (c + 1)}</${tag}>`;
+        }
+        html += '</tr>';
+      }
+      html += '</table><p></p>';
+      document.execCommand('insertHTML', false, html);
+      closeModal('tableModal');
+    }
+
+    function promptInsertImage() {
+      const url = prompt('Nhập đường dẫn hình ảnh (URI hoặc URL):');
+      if (url) {
+        document.execCommand('insertHTML', false, `<div class="doc-image-wrapper"><img src="${url}"><div class="doc-caption">Hình ảnh minh họa</div></div><p></p>`);
+      }
+    }
+
+    function promptInsertDiagram() {
+      const title = prompt('Tiêu đề sơ đồ kiến trúc:', 'Sơ đồ kiến trúc tổng thể');
+      if (title) {
+        document.execCommand('insertHTML', false, `<div class="doc-image-wrapper" style="border:1px dashed #3b82f6;padding:12pt;background:#f8fafc;"><div style="font-weight:bold;color:#1e3a8a;">📐 SƠ ĐỒ: ${title}</div><div class="doc-caption">${title}</div></div><p></p>`);
+      }
+    }
+
+    function promptInsertCitation() {
+      const source = prompt('Nhập tên nguồn trích dẫn hoặc tác giả (VD: Vaswani et al., 2017):');
+      if (source) {
+        document.execCommand('insertHTML', false, ` <span style="color:#2563eb;font-weight:600;background:#dbeafe;padding:1px 4px;border-radius:2px;">[${source}]</span> `);
+      }
+    }
+
+    function insertPageBreak() {
+      document.execCommand('insertHTML', false, '<div style="page-break-before:always;border-top:1px dashed #94a3b8;margin:16pt 0;text-align:center;color:#94a3b8;font-size:10px;">--- NGẮT TRANG ---</div><p></p>');
+    }
+
+    function closeModal(modalId) {
+      document.getElementById(modalId).classList.remove('active');
     }
   </script>
 </body>

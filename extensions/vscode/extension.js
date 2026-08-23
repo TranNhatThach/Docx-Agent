@@ -1,13 +1,13 @@
 const vscode = require('vscode');
 const path = require('path');
 const fs = require('fs');
-const { execSync } = require('child_process');
+const { spawn } = require('child_process');
 
 /**
  * @param {vscode.ExtensionContext} context
  */
 function activate(context) {
-    // 1. Register Default Custom Editor Provider for all .docx files
+    // 1. Register Default Custom Editor Provider for .docx files
     const provider = new DocxAgentEditorProvider(context);
     context.subscriptions.push(
         vscode.window.registerCustomEditorProvider('docxAgent.visualEditor', provider, {
@@ -24,14 +24,24 @@ function activate(context) {
         }
     });
     context.subscriptions.push(openCmd);
+
+    // 3. Register Command: Get Active Selection Context
+    const getSelCmd = vscode.commands.registerCommand('docxAgent.getSelectionContext', () => {
+        return provider.getActiveSelection();
+    });
+    context.subscriptions.push(getSelCmd);
 }
 
 class DocxAgentEditorProvider {
     constructor(context) {
         this.context = context;
+        this.activeSelection = null;
     }
 
-    // Required by VS Code CustomReadonlyEditorProvider interface
+    getActiveSelection() {
+        return this.activeSelection;
+    }
+
     async openCustomDocument(uri, _openContext, _token) {
         return {
             uri: uri,
@@ -50,47 +60,272 @@ class DocxAgentEditorProvider {
         if (!fs.existsSync(htmlPath)) {
             htmlPath = path.join(__dirname, '..', '..', 'src', 'docx_agent', 'interfaces', 'workspace', 'app.html');
         }
-        
-        let htmlTemplate = fs.existsSync(htmlPath) ? fs.readFileSync(htmlPath, 'utf8') : '<h2>Docx-Agent</h2>';
 
-        // Pre-render document content using Python DocxImporter for instant display
-        let renderedHtml = htmlTemplate;
-        try {
-            const pyScript = `import json; from pathlib import Path; from docx_agent.adapters.docx import DocxImporter; from docx_agent.canonical.model import HeadingBlock, ParagraphBlock, TableBlock; doc = DocxImporter.import_docx(r'''${filePath}'''); headings = [{'level': min(b.level, 3), 'text': b.full_text, 'id': b.id} for sec in doc.sections for b in sec.blocks if isinstance(b, HeadingBlock)]; body = ''.join([f'<h{min(b.level,3)} id=\\'{b.id}\\'>{b.full_text}</h{min(b.level,3)}>' if isinstance(b, HeadingBlock) else (f'<p id=\\'{b.id}\\'>{b.full_text}</p>' if isinstance(b, ParagraphBlock) and b.full_text.strip() else (f'<table id=\\'{b.id}\\'>{''.join(['<tr>' + ''.join([f'<td>{c.text}</td>' for c in row]) + '</tr>' for row in b.cells])}</table>' if isinstance(b, TableBlock) else '')) for sec in doc.sections for b in sec.blocks]); print(json.dumps({'title': doc.title or Path(r'''${filePath}''').stem, 'headings': headings, 'body_html': body}, ensure_ascii=False))`;
-            
-            const rawOutput = execSync(`python -c "${pyScript}"`, { encoding: 'utf8', maxBuffer: 10 * 1024 * 1024 });
-            const docData = JSON.parse(rawOutput);
+        const htmlContent = fs.existsSync(htmlPath) ? fs.readFileSync(htmlPath, 'utf8') : '<h2>Docx-Agent V2.1</h2>';
+        webviewPanel.webview.html = htmlContent;
 
-            if (docData && docData.body_html) {
-                let outlineHtml = '';
-                docData.headings.forEach(h => {
-                    outlineHtml += `<div class="tree-node h${h.level}" onclick="document.getElementById('${h.id}').scrollIntoView({behavior:'smooth'})">${h.text}</div>`;
-                });
+        // Find Python binary and workspace root dynamically
+        const pythonBin = this.getPythonExecutable(filePath);
+        const workspaceSrc = this.findDocxAgentSrc(filePath);
 
-                renderedHtml = renderedHtml
-                    .replace('<div class="outline-tree" id="outlineList">', `<div class="outline-tree" id="outlineList">${outlineHtml}`)
-                    .replace('<h1>Đang tải nội dung tài liệu...</h1>', docData.body_html)
-                    .replace('Bai_Tap_Oracle_HR_Schema.docx', (docData.title || path.basename(filePath)) + '.docx')
-                    .replace('Đang tải...', `${docData.headings.length} mục`);
-            }
-        } catch (err) {
-            console.error('Docx-Agent pre-render error:', err);
-        }
+        // Handle Bi-directional message passing
+        webviewPanel.webview.onDidReceiveMessage(async (message) => {
+            if (!message || !message.type) return;
 
-        // Set Webview HTML inside Antigravity Tab
-        webviewPanel.webview.html = renderedHtml;
+            switch (message.type) {
+                case 'WEBVIEW_READY': {
+                    webviewPanel.webview.postMessage({
+                        type: 'DOCUMENT_LOADING_STATE',
+                        stage: 'LOADING',
+                        message: 'Đang tải và phân tích tệp OpenXML...'
+                    });
 
-        // Handle bi-directional messages from Webview to Antigravity
-        webviewPanel.webview.onDidReceiveMessage(message => {
-            switch (message.command) {
-                case 'executeAgentAction':
-                    vscode.window.showInformationMessage(`Docx-Agent: ${message.action}`);
+                    this.loadDocumentAsync(pythonBin, workspaceSrc, filePath, webviewPanel);
                     break;
-                case 'exportDocx':
-                    vscode.window.showInformationMessage('Đang lưu và xuất file DOCX...');
+                }
+
+                case 'SELECTION_CHANGED': {
+                    this.activeSelection = message.payload;
+                    this.persistActiveSelection(message.payload, filePath);
                     break;
+                }
+
+                case 'REQUEST_AGENT_ACTION': {
+                    const action = message.payload.action;
+                    const selText = message.payload.context ? message.payload.context.selected_text : '';
+                    vscode.window.showInformationMessage(`Antigravity Agent: [${action}] "${selText.substring(0, 40)}..."`);
+                    break;
+                }
+
+                case 'SAVE_DOCUMENT': {
+                    this.saveDocumentAsync(pythonBin, workspaceSrc, filePath, message.payload, webviewPanel);
+                    break;
+                }
+
+                case 'APPLY_TRANSACTION': {
+                    vscode.window.showInformationMessage(`Đã áp dụng giao dịch: ${message.payload.transaction_id}`);
+                    break;
+                }
             }
         });
+    }
+
+    findDocxAgentSrc(filePath) {
+        // 1. Walk up from filePath
+        if (filePath) {
+            let cur = path.dirname(filePath);
+            for (let i = 0; i < 6; i++) {
+                const c1 = path.join(cur, 'Docx-Agent', 'src');
+                if (fs.existsSync(path.join(c1, 'docx_agent'))) return c1;
+                const c2 = path.join(cur, 'src');
+                if (fs.existsSync(path.join(c2, 'docx_agent'))) return c2;
+                const parent = path.dirname(cur);
+                if (parent === cur) break;
+                cur = parent;
+            }
+        }
+
+        // 2. Search in workspace folders
+        if (vscode.workspace.workspaceFolders) {
+            for (const wf of vscode.workspace.workspaceFolders) {
+                const c1 = path.join(wf.uri.fsPath, 'Docx-Agent', 'src');
+                if (fs.existsSync(path.join(c1, 'docx_agent'))) return c1;
+                const c2 = path.join(wf.uri.fsPath, 'src');
+                if (fs.existsSync(path.join(c2, 'docx_agent'))) return c2;
+            }
+        }
+
+        // 3. Fallback to extension directory parent
+        const devSrc = path.join(__dirname, '..', '..', 'src');
+        if (fs.existsSync(path.join(devSrc, 'docx_agent'))) return devSrc;
+
+        return '';
+    }
+
+    loadDocumentAsync(pythonBin, workspaceSrc, filePath, webviewPanel) {
+        const startTime = Date.now();
+        const args = ['-m', 'docx_agent.interfaces.cli.main', 'workspace-load', filePath, '--json'];
+
+        const env = Object.assign({}, process.env, {
+            PYTHONPATH: workspaceSrc ? `${workspaceSrc}${path.delimiter}${process.env.PYTHONPATH || ''}` : process.env.PYTHONPATH,
+            PYTHONIOENCODING: 'utf-8'
+        });
+
+        const proc = spawn(pythonBin, args, { env });
+        let stdout = '';
+        let stderr = '';
+
+        proc.stdout.on('data', (d) => { stdout += d.toString('utf8'); });
+        proc.stderr.on('data', (d) => { stderr += d.toString('utf8'); });
+
+        proc.on('close', (code) => {
+            const elapsed = Date.now() - startTime;
+            if (code === 0 && stdout.trim()) {
+                try {
+                    const docData = JSON.parse(stdout);
+                    let docxBase64 = null;
+                    try {
+                        if (fs.existsSync(filePath)) {
+                            docxBase64 = fs.readFileSync(filePath).toString('base64');
+                        }
+                    } catch (_) {}
+
+                    webviewPanel.webview.postMessage({
+                        type: 'DOCUMENT_LOADED',
+                        payload: docData,
+                        docxBase64: docxBase64
+                    });
+                } catch (e) {
+                    webviewPanel.webview.postMessage({
+                        type: 'DOCUMENT_LOAD_ERROR',
+                        payload: {
+                            stage: 'PARSING',
+                            error_type: 'JSONParseError',
+                            message: 'Không thể phân tích dữ liệu JSON trả về từ bộ xử lý tài liệu.',
+                            diagnostics: e.message,
+                            stderr: stdout.substring(0, 500)
+                        }
+                    });
+                }
+            } else {
+                webviewPanel.webview.postMessage({
+                    type: 'DOCUMENT_LOAD_ERROR',
+                    payload: {
+                        stage: 'LOADING',
+                        error_type: 'PythonBridgeExecutionError',
+                        message: `Bộ xử lý tài liệu trả về mã lỗi: ${code}`,
+                        diagnostics: stderr || stdout || 'Không có thông báo lỗi từ tiến trình Python.',
+                        stderr: stderr,
+                        command: `${pythonBin} ${args.join(' ')}`,
+                        elapsed_ms: elapsed,
+                        file_path: filePath
+                    }
+                });
+            }
+        });
+
+        proc.on('error', (err) => {
+            webviewPanel.webview.postMessage({
+                type: 'DOCUMENT_LOAD_ERROR',
+                payload: {
+                    stage: 'PYTHON_BRIDGE_CONNECTING',
+                    error_type: 'ProcessSpawnError',
+                    message: `Không thể khởi chạy Python: ${err.message}`,
+                    diagnostics: err.stack,
+                    command: pythonBin
+                }
+            });
+        });
+    }
+
+    saveDocumentAsync(pythonBin, workspaceSrc, filePath, payload, webviewPanel) {
+        let tmpDir = path.join(path.dirname(filePath), '.docx_agent_workspace');
+        if (!fs.existsSync(tmpDir)) {
+            try {
+                fs.mkdirSync(tmpDir, { recursive: true });
+            } catch (_) {
+                tmpDir = require('os').tmpdir();
+            }
+        }
+        const tmpPayloadFile = path.join(tmpDir, `save_payload_${Date.now()}.json`);
+        fs.writeFileSync(tmpPayloadFile, JSON.stringify(payload, null, 2), 'utf8');
+
+        const args = ['-m', 'docx_agent.interfaces.cli.main', 'workspace-save', filePath, tmpPayloadFile, '--output', filePath, '--json'];
+
+        const env = Object.assign({}, process.env, {
+            PYTHONPATH: workspaceSrc ? `${workspaceSrc}${path.delimiter}${process.env.PYTHONPATH || ''}` : process.env.PYTHONPATH,
+            PYTHONIOENCODING: 'utf-8'
+        });
+
+        const proc = spawn(pythonBin, args, { env });
+        let stdout = '';
+        let stderr = '';
+
+        proc.stdout.on('data', (d) => { stdout += d.toString('utf8'); });
+        proc.stderr.on('data', (d) => { stderr += d.toString('utf8'); });
+
+        proc.on('close', (code) => {
+            try { fs.unlinkSync(tmpPayloadFile); } catch (_) {}
+
+            if (code === 0 && stdout.trim()) {
+                try {
+                    const resData = JSON.parse(stdout);
+                    webviewPanel.webview.postMessage({
+                        type: 'SAVE_SUCCESS',
+                        payload: resData
+                    });
+                    vscode.window.setStatusBarMessage('Docx-Agent: Đã lưu tài liệu thành công', 3000);
+                } catch (e) {
+                    webviewPanel.webview.postMessage({
+                        type: 'SAVE_ERROR',
+                        payload: { message: 'Lỗi phân tích phản hồi lưu tài liệu.' }
+                    });
+                }
+            } else {
+                webviewPanel.webview.postMessage({
+                    type: 'SAVE_ERROR',
+                    payload: { message: stderr || 'Lỗi khi ghi file DOCX.' }
+                });
+            }
+        });
+    }
+
+    persistActiveSelection(selectionData, filePath) {
+        try {
+            let targetDir = null;
+            if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0) {
+                targetDir = path.join(vscode.workspace.workspaceFolders[0].uri.fsPath, 'Docx-Agent', '.docx_agent_workspace');
+                if (!fs.existsSync(path.dirname(targetDir))) {
+                    targetDir = path.join(vscode.workspace.workspaceFolders[0].uri.fsPath, '.docx_agent_workspace');
+                }
+            } else if (filePath) {
+                targetDir = path.join(path.dirname(filePath), '.docx_agent_workspace');
+            }
+            if (targetDir) {
+                if (!fs.existsSync(targetDir)) fs.mkdirSync(targetDir, { recursive: true });
+                fs.writeFileSync(path.join(targetDir, 'active_selection.json'), JSON.stringify(selectionData, null, 2), 'utf8');
+            }
+        } catch (_) {}
+    }
+
+    getPythonExecutable(filePath) {
+        const config = vscode.workspace.getConfiguration('python');
+        const defaultInterpreter = config.get('defaultInterpreterPath');
+        if (defaultInterpreter && fs.existsSync(defaultInterpreter)) {
+            return defaultInterpreter;
+        }
+
+        const searchRoots = [];
+        if (filePath) {
+            let cur = path.dirname(filePath);
+            for (let i = 0; i < 4; i++) {
+                searchRoots.push(cur);
+                searchRoots.push(path.join(cur, 'Docx-Agent'));
+                const parent = path.dirname(cur);
+                if (parent === cur) break;
+                cur = parent;
+            }
+        }
+        if (vscode.workspace.workspaceFolders) {
+            for (const wf of vscode.workspace.workspaceFolders) {
+                searchRoots.push(wf.uri.fsPath);
+                searchRoots.push(path.join(wf.uri.fsPath, 'Docx-Agent'));
+            }
+        }
+
+        for (const root of searchRoots) {
+            const venvs = [
+                path.join(root, '.venv', 'Scripts', 'python.exe'),
+                path.join(root, 'venv', 'Scripts', 'python.exe'),
+                path.join(root, '.venv', 'bin', 'python'),
+                path.join(root, 'venv', 'bin', 'python')
+            ];
+            for (const v of venvs) {
+                if (fs.existsSync(v)) return v;
+            }
+        }
+
+        return 'python';
     }
 }
 
