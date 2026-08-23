@@ -386,6 +386,31 @@
   </div>
 
   <script>
+    window.addEventListener('DOMContentLoaded', () => {
+      fetch('/api/document')
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.headings && data.headings.length > 0) {
+            const outlineList = document.getElementById('outlineList');
+            outlineList.innerHTML = '';
+            data.headings.forEach(h => {
+              const item = document.createElement('div');
+              item.className = `outline-item h${h.level}`;
+              item.innerText = h.text;
+              item.onclick = () => {
+                const el = document.getElementById(h.id);
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+              };
+              outlineList.appendChild(item);
+            });
+          }
+          if (data && data.body_html) {
+            document.getElementById('docCanvas').innerHTML = data.body_html;
+          }
+        })
+        .catch(err => console.log('Standalone mode'));
+    });
+
     function onContentChange() {
       // Incremental dirty tracking hook
     }
