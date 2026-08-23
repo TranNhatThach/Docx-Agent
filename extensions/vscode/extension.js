@@ -31,6 +31,14 @@ class DocxAgentEditorProvider {
         this.context = context;
     }
 
+    // Required by VS Code CustomReadonlyEditorProvider interface
+    async openCustomDocument(uri, _openContext, _token) {
+        return {
+            uri: uri,
+            dispose: () => {}
+        };
+    }
+
     async resolveCustomEditor(document, webviewPanel, _token) {
         webviewPanel.webview.options = {
             enableScripts: true,
