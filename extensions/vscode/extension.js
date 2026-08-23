@@ -1,13 +1,13 @@
 const vscode = require('vscode');
 const path = require('path');
 const fs = require('fs');
-const { exec } = require('child_process');
+const { execSync } = require('child_process');
 
 /**
  * @param {vscode.ExtensionContext} context
  */
 function activate(context) {
-    // 1. Register Custom Editor Provider for .docx inside VS Code / Antigravity
+    // 1. Register Default Custom Editor Provider for all .docx files
     const provider = new DocxAgentEditorProvider(context);
     context.subscriptions.push(
         vscode.window.registerCustomEditorProvider('docxAgent.visualEditor', provider, {
@@ -21,8 +21,6 @@ function activate(context) {
         const targetUri = uri || (vscode.window.activeTextEditor && vscode.window.activeTextEditor.document.uri);
         if (targetUri) {
             vscode.commands.executeCommand('vscode.openWith', targetUri, 'docxAgent.visualEditor');
-        } else {
-            vscode.window.showInformationMessage('Vui lòng chọn một file .docx để mở trực tiếp trong Antigravity.');
         }
     });
     context.subscriptions.push(openCmd);
@@ -45,20 +43,34 @@ class DocxAgentEditorProvider {
             htmlPath = path.join(__dirname, '..', '..', 'src', 'docx_agent', 'interfaces', 'workspace', 'app.html');
         }
         
-        let htmlContent = fs.existsSync(htmlPath) ? fs.readFileSync(htmlPath, 'utf8') : '<h2>Docx-Agent</h2>';
+        let htmlTemplate = fs.existsSync(htmlPath) ? fs.readFileSync(htmlPath, 'utf8') : '<h2>Docx-Agent</h2>';
+
+        // Pre-render document content using Python DocxImporter for instant display
+        let renderedHtml = htmlTemplate;
+        try {
+            const pyScript = `import json; from pathlib import Path; from docx_agent.adapters.docx import DocxImporter; from docx_agent.canonical.model import HeadingBlock, ParagraphBlock, TableBlock; doc = DocxImporter.import_docx(r'''${filePath}'''); headings = [{'level': min(b.level, 3), 'text': b.full_text, 'id': b.id} for sec in doc.sections for b in sec.blocks if isinstance(b, HeadingBlock)]; body = ''.join([f'<h{min(b.level,3)} id=\\'{b.id}\\'>{b.full_text}</h{min(b.level,3)}>' if isinstance(b, HeadingBlock) else (f'<p id=\\'{b.id}\\'>{b.full_text}</p>' if isinstance(b, ParagraphBlock) and b.full_text.strip() else (f'<table id=\\'{b.id}\\'>{''.join(['<tr>' + ''.join([f'<td>{c.text}</td>' for c in row]) + '</tr>' for row in b.cells])}</table>' if isinstance(b, TableBlock) else '')) for sec in doc.sections for b in sec.blocks]); print(json.dumps({'title': doc.title or Path(r'''${filePath}''').stem, 'headings': headings, 'body_html': body}, ensure_ascii=False))`;
+            
+            const rawOutput = execSync(`python -c "${pyScript}"`, { encoding: 'utf8', maxBuffer: 10 * 1024 * 1024 });
+            const docData = JSON.parse(rawOutput);
+
+            if (docData && docData.body_html) {
+                let outlineHtml = '';
+                docData.headings.forEach(h => {
+                    outlineHtml += `<div class="tree-node h${h.level}" onclick="document.getElementById('${h.id}').scrollIntoView({behavior:'smooth'})">${h.text}</div>`;
+                });
+
+                renderedHtml = renderedHtml
+                    .replace('<div class="outline-tree" id="outlineList">', `<div class="outline-tree" id="outlineList">${outlineHtml}`)
+                    .replace('<h1>Đang tải nội dung tài liệu...</h1>', docData.body_html)
+                    .replace('Bai_Tap_Oracle_HR_Schema.docx', (docData.title || path.basename(filePath)) + '.docx')
+                    .replace('Đang tải...', `${docData.headings.length} mục`);
+            }
+        } catch (err) {
+            console.error('Docx-Agent pre-render error:', err);
+        }
 
         // Set Webview HTML inside Antigravity Tab
-        webviewPanel.webview.html = htmlContent;
-
-        // Fetch document outline & content from docx-agent CLI
-        exec(`docx-agent inspect "${filePath}" --json`, (err, stdout) => {
-            if (!err && stdout) {
-                try {
-                    const data = JSON.parse(stdout);
-                    webviewPanel.webview.postMessage({ command: 'loadDocument', data: data });
-                } catch(e) {}
-            }
-        });
+        webviewPanel.webview.html = renderedHtml;
 
         // Handle bi-directional messages from Webview to Antigravity
         webviewPanel.webview.onDidReceiveMessage(message => {
